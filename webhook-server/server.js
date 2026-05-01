@@ -246,4 +246,4 @@ HR Team
 
 app.get('/', (_, res) => res.send('Webhook server running'));
 
-app.listen(PORT, () => console.log(`Webhook server listening on http://localhost:${PORT}`));
+module.exports = app;
