@@ -16,11 +16,21 @@ const IS_VERCEL = !!process.env.VERCEL;
 
 const upload = multer({ dest: IS_VERCEL ? '/tmp' : __dirname });
 
-const ALLOWED_IT_SKILLS = [
+const TECH_ROLE_KEYWORDS = [
+  'developer','engineer','software','web','frontend','backend','full stack',
+  'mern','mean','app','application','designer','ui','ux','qa','tester',
+  'devops','cloud','ai','ml','machine learning','data','analyst',
+  'cyber','security','python','react','node','java','php','flutter',
+  'android','ios','wordpress','laravel','angular','technical'
+];
+
+const TECH_SKILL_KEYWORDS = [
   'react','next.js','node','node.js','javascript','typescript','html','css',
-  'mongodb','mysql','sql','firebase','python','django','flask',
-  'figma','ui','ux','testing','qa','devops','docker','aws',
-  'git','github','api','express','java','php','laravel','angular'
+  'mongodb','mysql','sql','firebase','python','django','flask','figma',
+  'ui','ux','testing','qa','devops','docker','aws','git','github','api',
+  'express','java','php','laravel','angular','flutter','dart','android',
+  'ios','swift','kotlin','machine learning','ai','ml','data science',
+  'cyber security','wordpress','cloud','linux','c++','c#'
 ];
 
 const transporter = nodemailer.createTransport({
@@ -48,22 +58,51 @@ async function generateAssignmentPDF(candidate) {
     const stream = normalfs.createWriteStream(pdfPath);
     doc.pipe(stream);
 
-    doc.fontSize(22).text('SensusSoft Technical Assignment', { align: 'center' });
-    doc.moveDown();
+    doc.fontSize(24).text('SensusSoft Technologies Pvt. Ltd.', { align: 'center' });
+    doc.fontSize(18).text('Technical Evaluation Assignment Document', { align: 'center' });
+    doc.moveDown(2);
+
     doc.fontSize(12).text(`Candidate Name: ${candidate.fullName}`);
-    doc.text(`Applied Role: ${candidate.appliedRole}`);
+    doc.text(`Applied Position: ${candidate.appliedRole}`);
     doc.text(`HR Screening Score: ${candidate.hrScore}/100`);
-    doc.text(`Submission Deadline: Within 3 Days`);
-    doc.moveDown();
-    doc.fontSize(16).text(`Assignment: ${candidate.assignment.title}`);
+    doc.text(`Assignment Deadline: Within 3 Working Days`);
     doc.moveDown();
 
-    candidate.assignment.requirements.forEach((req, i) => doc.text(`${i+1}. ${req}`));
-
+    doc.fontSize(16).text('1. Assignment Overview');
+    doc.fontSize(12).text(`As part of our technical recruitment evaluation process, you are required to complete the following practical assignment titled "${candidate.assignment.title}". This assignment is intended to assess your coding standards, technical understanding, logical thinking, project structuring, and problem solving abilities in a real-world implementation scenario.`);
     doc.moveDown();
-    doc.text(`Private GitHub Repository: ${candidate.githubRepoUrl}`);
+
+    doc.fontSize(16).text('2. Project Objective');
+    doc.fontSize(12).text(`You are expected to design and develop a functional technical solution relevant to the role of ${candidate.appliedRole}. The assignment must reflect professional implementation standards and proper use of the following technologies/skills: ${candidate.assignment.requirements.join(', ')}.`);
+    doc.moveDown();
+
+    doc.fontSize(16).text('3. Functional Requirements');
+    candidate.assignment.requirements.forEach((req, i) => {
+      doc.fontSize(12).text(`${i+1}. ${req}`);
+    });
+    doc.moveDown();
+
+    doc.fontSize(16).text('4. Submission Guidelines');
+    doc.fontSize(12).text('• Candidate must regularly push code commits to the assigned private GitHub repository.\n• Code structure should be modular, clean, and production readable.\n• README documentation must contain setup and execution instructions.\n• Proper comments should be added where required.\n• Final project must be completed within the mentioned deadline.');
+    doc.moveDown();
+
+    doc.fontSize(16).text('5. Evaluation Criteria');
+    doc.fontSize(12).text('Your submission will be evaluated based on code quality, folder structure, technical accuracy, UI/UX implementation (if applicable), API handling, database design (if applicable), optimization, and documentation quality.');
+    doc.moveDown();
+
+    doc.fontSize(16).text('6. Assigned Private GitHub Repository');
+    doc.fontSize(12).text(`${candidate.githubRepoUrl}`);
+    doc.moveDown(2);
+
+    doc.text('We appreciate your interest in joining SensusSoft and look forward to reviewing your technical implementation.', {
+      align: 'left'
+    });
+
+    doc.moveDown(2);
+    doc.text('Regards,');
+    doc.text('SensusSoft HR & Technical Recruitment Team');
+
     doc.end();
-
     stream.on('finish', () => resolve(pdfPath));
   });
 }
@@ -75,14 +114,19 @@ function extractDetectedSkills(text) {
 
 app.post('/api/career-apply', upload.single('resumeFile'), async (req, res) => {
   try {
-    const body = req.body || {};
+   const body = req.body || {};
 
-    if (!body.fullName || !body.email || !body.appliedRole || !body.yearsExperience || !body.skills) {
-      return res.status(400).json({ error: 'Missing required fields.' });
-    }
+const fullName = String(body.fullName || '').trim();
+const email = String(body.email || '').trim();
+const appliedRole = String(body.appliedRole || '').trim();
+const yearsExperience = String(body.yearsExperience || '').trim();
+const rawSkills = String(body.skills || '').trim();
 
-    let manualSkills = String(body.skills).split(',').map(s => s.trim()).filter(Boolean);
+if (!fullName || !email || !appliedRole || !yearsExperience || !rawSkills) {
+  return res.status(400).json({ error: 'Missing required fields.' });
+}
 
+let manualSkills = rawSkills.split(',').map(s => s.trim()).filter(Boolean);
     let resumeDetectedSkills = [];
     if (req.file) {
       try {
@@ -95,26 +139,29 @@ app.post('/api/career-apply', upload.single('resumeFile'), async (req, res) => {
     }
 
     const mergedSkills = [...new Set([...manualSkills, ...resumeDetectedSkills])];
-    const matchedSkills = mergedSkills.filter(skill =>
-      ALLOWED_IT_SKILLS.includes(String(skill).toLowerCase())
-    );
+    const roleIsTech = TECH_ROLE_KEYWORDS.some(word =>
+  appliedRole.toLowerCase().includes(word)
+);
 
-    if (matchedSkills.length === 0) {
-      return res.status(400).json({
-        error: 'Currently we are accepting applications only for IT and Software related roles and skills.'
-      });
-    }
+const matchedSkills = mergedSkills.filter(skill =>
+  TECH_SKILL_KEYWORDS.some(word => String(skill).toLowerCase().includes(word))
+);
 
-    const profile = {
-      id: Date.now().toString(),
-      fullName: String(body.fullName).trim(),
-      email: String(body.email).trim(),
-      appliedRole: String(body.appliedRole).trim(),
-      yearsExperience: Number(body.yearsExperience),
-      skills: mergedSkills,
-      resumeUrl: req.file ? req.file.originalname : undefined,
-      receivedAt: new Date().toISOString()
-    };
+if (!roleIsTech && matchedSkills.length === 0) {
+  return res.status(400).json({
+    error: 'Currently we are accepting applications only for IT, Software, Technical Engineering, and Digital Technology related positions.'
+  });
+}
+
+const finalSkills = matchedSkills.length > 0 ? matchedSkills : mergedSkills;
+
+const profile = {
+fullName,
+email,
+appliedRole,
+yearsExperience: Number(yearsExperience),
+skills: finalSkills
+};
 
     let assignmentTitle = `Technical Engineering Assignment for ${profile.appliedRole}`;
     let assignmentRequirements = [];
@@ -247,3 +294,9 @@ app.get('/', (_, res) => {
 });
 
 module.exports = app;
+
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`Webhook server running on http://localhost:${PORT}`);
+  });
+}
