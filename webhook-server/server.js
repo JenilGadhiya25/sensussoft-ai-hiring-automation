@@ -3,6 +3,7 @@ const express = require('express');
 const nodemailer = require('nodemailer');
 const PDFDocument = require('pdfkit');
 const multer = require('multer');
+const { OpenAI } = require('openai');
 
 const normalfs = require('fs');
 const path = require('path');
@@ -12,6 +13,10 @@ const PORT = process.env.PORT || 4000;
 const IS_VERCEL = !!process.env.VERCEL;
 
 const upload = multer({ dest: IS_VERCEL ? '/tmp' : __dirname });
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+});
 
 const TECH_ROLE_KEYWORDS = [
   'developer','engineer','software','web','frontend','backend','full stack',
@@ -47,61 +52,51 @@ app.use((req, res, next) => {
   next();
 });
 
-function buildDynamicAssignment(profile, resumeHint = '') {
-  const role = profile.appliedRole.toLowerCase();
-  const lowerResume = resumeHint.toLowerCase();
+async function generateAssignmentFromAI(profile, resumeHint = '') {
+  try {
+    const prompt = `
+Generate a PROFESSIONAL software company technical assignment document for a candidate.
 
-  let projectName = 'Professional Software Development System';
-  let objective = 'Build a scalable industry-grade software solution.';
-  let modules = [];
-  let features = [];
-  let workflow = [];
+Candidate Role: ${profile.appliedRole}
+Candidate Skills: ${profile.skills.join(', ')}
+Candidate Experience: ${profile.yearsExperience} years
+Resume Hint: ${resumeHint}
 
-  if (lowerResume.includes('doctor') || lowerResume.includes('health')) {
-    projectName = 'Multi Doctor Healthcare Booking System';
-    modules = ['Patient Panel','Doctor Panel','Admin Dashboard','Appointment Engine'];
-    features = ['Doctor listing','Appointment booking','Prescription upload','Admin reports','Secure login'];
-    workflow = ['PATIENT REGISTER','BOOK APPOINTMENT','DOCTOR APPROVE','CONSULTATION','REPORT'];
-  } else if (lowerResume.includes('food') || lowerResume.includes('restaurant')) {
-    projectName = 'Online Food Ordering and Delivery Platform';
-    modules = ['Customer App','Restaurant Panel','Delivery Panel','Admin Dashboard'];
-    features = ['Menu listing','Cart order','Live order tracking','Payment flow','Restaurant reports'];
-    workflow = ['USER ORDER','RESTAURANT ACCEPT','DELIVERY PROCESS','ORDER COMPLETE'];
-  } else if (lowerResume.includes('vehicle') || lowerResume.includes('car')) {
-    projectName = 'Vehicle Service Management System';
-    modules = ['Check-in Panel','Advisor Dashboard','Job Card Manager','Reports'];
-    features = ['Vehicle check-in','Service advisor assign','Job status tracking','Time reports','Admin control'];
-    workflow = ['CHECKED_IN','ASSIGN_ADVISOR','IN_SERVICE','QC','DELIVERED'];
-  } else if (role.includes('react') || role.includes('frontend')) {
-    projectName = 'Enterprise Employee Management Dashboard';
-    modules = ['Admin UI','Dashboard','Employee CRUD','Analytics'];
-    features = ['Responsive design','Search/filter','Protected routes','API integration','Charts'];
-    workflow = ['LOGIN','VIEW DASHBOARD','MANAGE EMPLOYEES','REPORTS'];
-  } else if (role.includes('node') || role.includes('backend')) {
-    projectName = 'Recruitment REST API Backend System';
-    modules = ['Auth APIs','Candidate CRUD APIs','Database Layer','Admin APIs'];
-    features = ['JWT auth','Middleware validation','MongoDB','REST docs','Deployment'];
-    workflow = ['REQUEST','VALIDATE','PROCESS','STORE','RESPONSE'];
-  } else if (role.includes('python')) {
-    projectName = 'Python Data Automation Utility';
-    modules = ['Automation Engine','Processor','Report Generator'];
-    features = ['Data extraction','Automation','Export reports','CLI utility'];
-    workflow = ['INPUT','PROCESS','ANALYZE','EXPORT'];
-  } else {
-    projectName = 'Complete Hiring Management Web Application';
-    modules = ['Frontend Form','Backend APIs','Admin Dashboard','Status Reports'];
-    features = ['Form submission','Candidate management','Status workflow','Deployment','Reports'];
-    workflow = ['SUBMIT','ADMIN REVIEW','STATUS UPDATE','FINAL REPORT'];
+Return ONLY valid JSON in this exact format:
+{
+"title":"",
+"objective":"",
+"modules":["","",""],
+"features":["","","","",""],
+"workflow":["","","",""],
+"stack":["","",""]
+}
+
+Make it unique, detailed, and realistic according to candidate profile.
+`;
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.9
+    });
+
+    const txt = completion.choices[0].message.content.trim();
+    const clean = txt.replace(/```json/g, '').replace(/```/g, '').trim();
+    return JSON.parse(clean);
+
+  } catch (err) {
+    console.error('OpenAI generation failed:', err.message);
+
+    return {
+      title: `Technical Engineering Assignment for ${profile.appliedRole}`,
+      objective: 'Build a professional scalable technical software solution according to industry standards.',
+      modules: ['Admin Module', 'User Module', 'Backend APIs', 'Reports'],
+      features: ['Authentication', 'CRUD management', 'API integration', 'Reporting', 'Deployment'],
+      workflow: ['INPUT', 'PROCESS', 'MANAGE', 'REPORT'],
+      stack: profile.skills
+    };
   }
-
-  return {
-    title: projectName,
-    objective,
-    modules,
-    features,
-    workflow,
-    stack: profile.skills
-  };
 }
 
 async function generateAssignmentPDF(candidate) {
@@ -146,7 +141,7 @@ async function generateAssignmentPDF(candidate) {
     doc.moveDown();
 
     doc.fontSize(14).text('6. Non Functional Requirements');
-    doc.fontSize(12).text('• Fast performance\n• Secure APIs\n• Clean UI\n• Scalable database design\n• Production ready code');
+    doc.fontSize(12).text('• Fast performance\n• Secure APIs\n• Clean UI\n• Scalable architecture\n• Production ready code');
     doc.moveDown();
 
     doc.fontSize(14).text('7. Technology Stack');
@@ -203,15 +198,12 @@ app.post('/api/career-apply', upload.single('resumeFile'), async (req, res) => {
     };
 
     const resumeHint = req.file ? req.file.originalname || '' : '';
-    const assignmentResult = {
-      screening_score: Math.min(98, 70 + profile.yearsExperience * 6 + matchedSkills.length * 3),
-      assignment: buildDynamicAssignment(profile, resumeHint)
-    };
+    const aiAssignment = await generateAssignmentFromAI(profile, resumeHint);
 
     const processedCandidate = {
       ...profile,
-      assignment: assignmentResult.assignment,
-      hrScore: assignmentResult.screening_score
+      assignment: aiAssignment,
+      hrScore: Math.min(98, 70 + profile.yearsExperience * 6 + matchedSkills.length * 3)
     };
 
     const pdfFile = await generateAssignmentPDF(processedCandidate);
@@ -226,7 +218,7 @@ Thank you for applying for ${processedCandidate.appliedRole} at SensusSoft.
 
 Your HR screening score: ${processedCandidate.hrScore}/100
 
-Please find attached your technical assignment PDF.
+Please find attached your AI generated custom technical assignment PDF.
 
 Best regards,
 SensusSoft HR Team`,
@@ -240,7 +232,7 @@ SensusSoft HR Team`,
 
     return res.status(201).json({
       success: true,
-      assignment: assignmentResult.assignment
+      assignment: aiAssignment
     });
 
   } catch (err) {
