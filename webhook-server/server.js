@@ -47,6 +47,63 @@ app.use((req, res, next) => {
   next();
 });
 
+function buildDynamicAssignment(profile, resumeHint = '') {
+  const role = profile.appliedRole.toLowerCase();
+  const lowerResume = resumeHint.toLowerCase();
+
+  let projectName = 'Professional Software Development System';
+  let objective = 'Build a scalable industry-grade software solution.';
+  let modules = [];
+  let features = [];
+  let workflow = [];
+
+  if (lowerResume.includes('doctor') || lowerResume.includes('health')) {
+    projectName = 'Multi Doctor Healthcare Booking System';
+    modules = ['Patient Panel','Doctor Panel','Admin Dashboard','Appointment Engine'];
+    features = ['Doctor listing','Appointment booking','Prescription upload','Admin reports','Secure login'];
+    workflow = ['PATIENT REGISTER','BOOK APPOINTMENT','DOCTOR APPROVE','CONSULTATION','REPORT'];
+  } else if (lowerResume.includes('food') || lowerResume.includes('restaurant')) {
+    projectName = 'Online Food Ordering and Delivery Platform';
+    modules = ['Customer App','Restaurant Panel','Delivery Panel','Admin Dashboard'];
+    features = ['Menu listing','Cart order','Live order tracking','Payment flow','Restaurant reports'];
+    workflow = ['USER ORDER','RESTAURANT ACCEPT','DELIVERY PROCESS','ORDER COMPLETE'];
+  } else if (lowerResume.includes('vehicle') || lowerResume.includes('car')) {
+    projectName = 'Vehicle Service Management System';
+    modules = ['Check-in Panel','Advisor Dashboard','Job Card Manager','Reports'];
+    features = ['Vehicle check-in','Service advisor assign','Job status tracking','Time reports','Admin control'];
+    workflow = ['CHECKED_IN','ASSIGN_ADVISOR','IN_SERVICE','QC','DELIVERED'];
+  } else if (role.includes('react') || role.includes('frontend')) {
+    projectName = 'Enterprise Employee Management Dashboard';
+    modules = ['Admin UI','Dashboard','Employee CRUD','Analytics'];
+    features = ['Responsive design','Search/filter','Protected routes','API integration','Charts'];
+    workflow = ['LOGIN','VIEW DASHBOARD','MANAGE EMPLOYEES','REPORTS'];
+  } else if (role.includes('node') || role.includes('backend')) {
+    projectName = 'Recruitment REST API Backend System';
+    modules = ['Auth APIs','Candidate CRUD APIs','Database Layer','Admin APIs'];
+    features = ['JWT auth','Middleware validation','MongoDB','REST docs','Deployment'];
+    workflow = ['REQUEST','VALIDATE','PROCESS','STORE','RESPONSE'];
+  } else if (role.includes('python')) {
+    projectName = 'Python Data Automation Utility';
+    modules = ['Automation Engine','Processor','Report Generator'];
+    features = ['Data extraction','Automation','Export reports','CLI utility'];
+    workflow = ['INPUT','PROCESS','ANALYZE','EXPORT'];
+  } else {
+    projectName = 'Complete Hiring Management Web Application';
+    modules = ['Frontend Form','Backend APIs','Admin Dashboard','Status Reports'];
+    features = ['Form submission','Candidate management','Status workflow','Deployment','Reports'];
+    workflow = ['SUBMIT','ADMIN REVIEW','STATUS UPDATE','FINAL REPORT'];
+  }
+
+  return {
+    title: projectName,
+    objective,
+    modules,
+    features,
+    workflow,
+    stack: profile.skills
+  };
+}
+
 async function generateAssignmentPDF(candidate) {
   const pdfPath = IS_VERCEL
     ? `/tmp/assignment-${Date.now()}.pdf`
@@ -57,36 +114,43 @@ async function generateAssignmentPDF(candidate) {
     const stream = normalfs.createWriteStream(pdfPath);
     doc.pipe(stream);
 
-    doc.fontSize(24).text('SensusSoft Technologies Pvt. Ltd.', { align: 'center' });
-    doc.fontSize(18).text('Technical Evaluation Assignment Document', { align: 'center' });
+    doc.fontSize(22).text('SensusSoft Software Pvt. Ltd.', { align: 'center' });
+    doc.fontSize(18).text(candidate.assignment.title, { align: 'center' });
+    doc.fontSize(14).text(`(${candidate.skills.join(' + ')})`, { align: 'center' });
     doc.moveDown(2);
 
     doc.fontSize(12).text(`Candidate Name: ${candidate.fullName}`);
     doc.text(`Applied Position: ${candidate.appliedRole}`);
     doc.text(`HR Screening Score: ${candidate.hrScore}/100`);
-    doc.text(`Assignment Deadline: Within 3 Working Days`);
+    doc.text(`Submission Deadline: Within 3 Working Days`);
     doc.moveDown();
 
-    doc.fontSize(16).text('1. Assignment Overview');
-    doc.fontSize(12).text(`You are required to complete the professional technical assignment titled "${candidate.assignment.title}". This evaluation measures coding quality, architecture, debugging, deployment knowledge and documentation discipline.`);
+    doc.fontSize(14).text('1. Objective');
+    doc.fontSize(12).text(candidate.assignment.objective);
     doc.moveDown();
 
-    doc.fontSize(16).text('2. Project Objective');
-    doc.fontSize(12).text(`The assignment must be developed according to industry implementation standards using the following technologies: ${candidate.assignment.requirements.join(', ')}.`);
+    doc.fontSize(14).text('2. Suggested Modules');
+    candidate.assignment.modules.forEach(m => doc.text('• ' + m));
     doc.moveDown();
 
-    doc.fontSize(16).text('3. Functional Requirements');
-    candidate.assignment.requirements.forEach((req, i) => {
-      doc.fontSize(12).text(`${i + 1}. ${req}`);
-    });
+    doc.fontSize(14).text('3. Core Features');
+    candidate.assignment.features.forEach(f => doc.text('• ' + f));
     doc.moveDown();
 
-    doc.fontSize(16).text('4. Submission Guidelines');
-    doc.fontSize(12).text('• Maintain proper project structure.\n• Add README setup instructions.\n• Use comments where needed.\n• Final delivery must be within deadline.\n• Share source code zip or GitHub link by email.');
+    doc.fontSize(14).text('4. Workflow / System Flow');
+    doc.fontSize(12).text(candidate.assignment.workflow.join(' → '));
     doc.moveDown();
 
-    doc.fontSize(16).text('5. Evaluation Criteria');
-    doc.fontSize(12).text('Evaluation will be based on technical accuracy, clean coding practices, architecture, API/database logic, deployment understanding, documentation, and production readiness.');
+    doc.fontSize(14).text('5. Functional Requirements');
+    candidate.assignment.features.forEach((f,i) => doc.text(`${i+1}. ${f}`));
+    doc.moveDown();
+
+    doc.fontSize(14).text('6. Non Functional Requirements');
+    doc.fontSize(12).text('• Fast performance\n• Secure APIs\n• Clean UI\n• Scalable database design\n• Production ready code');
+    doc.moveDown();
+
+    doc.fontSize(14).text('7. Technology Stack');
+    candidate.assignment.stack.forEach(t => doc.text('• ' + t));
     doc.moveDown(2);
 
     doc.text('Regards,');
@@ -138,64 +202,10 @@ app.post('/api/career-apply', upload.single('resumeFile'), async (req, res) => {
       skills: finalSkills
     };
 
-    let assignmentTitle = `Technical Engineering Assignment for ${profile.appliedRole}`;
-    let assignmentRequirements = [];
-
-    if (profile.appliedRole.toLowerCase().includes('react')) {
-      assignmentTitle = 'Enterprise Candidate Management Dashboard';
-      assignmentRequirements = [
-        'Build complete responsive React admin dashboard',
-        'Add login authentication and protected routing',
-        'Create candidate table with search, filter, edit, delete',
-        'Integrate public API and analytics cards',
-        `Mandatory stack: ${profile.skills.join(', ')}`,
-        'Deploy and document in README'
-      ];
-    } else if (profile.appliedRole.toLowerCase().includes('node')) {
-      assignmentTitle = 'Recruitment REST API Backend System';
-      assignmentRequirements = [
-        'Create Node.js + Express production backend',
-        'CRUD APIs with middleware validation',
-        'MongoDB or JSON storage integration',
-        'Postman API documentation',
-        `Mandatory stack: ${profile.skills.join(', ')}`,
-        'Deploy backend and document usage'
-      ];
-    } else if (profile.appliedRole.toLowerCase().includes('full stack')) {
-      assignmentTitle = 'Complete Hiring Management Web Application';
-      assignmentRequirements = [
-        'Build frontend candidate application form',
-        'Build backend API submission handling',
-        'Create admin panel to view all candidates',
-        'Add login system and candidate status management',
-        `Mandatory stack: ${profile.skills.join(', ')}`,
-        'Deploy full project live with README'
-      ];
-    } else if (profile.appliedRole.toLowerCase().includes('python')) {
-      assignmentTitle = 'Python Candidate Data Automation Utility';
-      assignmentRequirements = [
-        'Build Python/Flask automation utility',
-        'Process candidate records and generate reports',
-        'Create exportable summary file',
-        `Mandatory stack: ${profile.skills.join(', ')}`,
-        'Document execution process'
-      ];
-    } else {
-      assignmentRequirements = [
-        `Build a professional technical project relevant to ${profile.appliedRole}`,
-        `Mandatory technologies: ${profile.skills.join(', ')}`,
-        'Use production level folder structure',
-        'Deploy live and document complete project setup',
-        'Share source code submission professionally'
-      ];
-    }
-
+    const resumeHint = req.file ? req.file.originalname || '' : '';
     const assignmentResult = {
       screening_score: Math.min(98, 70 + profile.yearsExperience * 6 + matchedSkills.length * 3),
-      assignment: {
-        title: assignmentTitle,
-        requirements: assignmentRequirements
-      }
+      assignment: buildDynamicAssignment(profile, resumeHint)
     };
 
     const processedCandidate = {
