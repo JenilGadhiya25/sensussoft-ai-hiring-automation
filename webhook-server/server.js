@@ -13,7 +13,6 @@ const PORT = process.env.PORT || 4000;
 const IS_VERCEL = !!process.env.VERCEL;
 
 const AUDIT_LOG_PATH = process.env.AUDIT_LOG_PATH || path.join(__dirname, '..', 'audit-logs', 'candidate-log.json');
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const SMTP_EMAIL = process.env.SMTP_EMAIL;
 const SMTP_PASS = process.env.SMTP_PASS;
 
@@ -57,143 +56,85 @@ function detectBusinessDomain(text=''){
   return 'Business Automation';
 }
 
+function enrichSkillsFromSignals(role,resumeText,skills){
+  const signal = `${role} ${resumeText} ${skills.join(' ')}`.toLowerCase();
+  const enriched = new Set(skills);
+
+  if(/react|frontend|html|css|javascript|next/.test(signal)){
+    enriched.add('React');
+    enriched.add('Frontend Architecture');
+    enriched.add('Responsive UI');
+  }
+
+  if(/node|backend|express|api|server/.test(signal)){
+    enriched.add('Node.js');
+    enriched.add('REST API');
+    enriched.add('Database Logic');
+  }
+
+  if(/full stack|mern|developer|software engineer/.test(signal)){
+    enriched.add('React');
+    enriched.add('Node.js');
+    enriched.add('MongoDB');
+    enriched.add('Full Stack Workflow');
+  }
+
+  if(/ui|ux|figma|designer|product design/.test(signal)){
+    enriched.add('Figma');
+    enriched.add('Wireframing');
+    enriched.add('Prototype');
+    enriched.add('Design System');
+  }
+
+  if(/python|automation|django|flask/.test(signal)){
+    enriched.add('Python');
+    enriched.add('Automation');
+    enriched.add('Reporting');
+  }
+
+  if(/qa|tester|testing/.test(signal)){
+    enriched.add('Manual Testing');
+    enriched.add('Automation Testing');
+  }
+
+  return [...enriched];
+}
+
 function smartFallbackAssignment(roleBucket, domain, skills){
-  const maps = {
-    uiux: {
-      title:`Design a Premium ${domain} User Experience Platform`,
-      intro:`Create a full enterprise UI/UX case study and clickable prototype for a ${domain} based mobile/web application.`,
-      objective:`The company wants a world-class digital user journey that improves usability, engagement, retention and conversion.`,
-      modules:[
-        'Market Research and Competitor UX Analysis',
-        'User Persona Mapping and Journey Flow',
-        'Low Fidelity Wireframe Blueprint',
-        'High Fidelity Figma Screen Design',
-        'Interactive Prototype with Click Flow',
-        'Design System and Component Documentation'
-      ]
-    },
-    frontend: {
-      title:`Build a Responsive ${domain} Admin Dashboard`,
-      intro:`Develop a frontend production grade dashboard system with modern UI, graphs, and reusable components.`,
-      objective:`The dashboard should help business managers monitor and control all ${domain} operations efficiently.`,
-      modules:[
-        'Secure Login Interface',
-        'Dashboard Analytics Cards',
-        'Advanced Listing Tables',
-        'Search Filter and Pagination',
-        'Notification and Settings Screens',
-        'Responsive Mobile UI'
-      ]
-    },
-    backend: {
-      title:`Develop a ${domain} Enterprise REST API`,
-      intro:`Build a secure backend architecture for business process automation.`,
-      objective:`The APIs must handle all operational data flow, validations, security and admin reporting.`,
-      modules:[
-        'JWT Auth APIs',
-        'Master CRUD APIs',
-        'Role Middleware',
-        'Admin Reports',
-        'Status Workflow APIs',
-        'Swagger Documentation'
-      ]
-    },
-    fullstack: {
-      title:`Build a Complete ${domain} SaaS Hiring Platform`,
-      intro:`Create a full frontend + backend + admin + analytics enterprise application.`,
-      objective:`Digitize and automate the entire ${domain} business lifecycle with scalable architecture.`,
-      modules:[
-        'Public Candidate/User Portal',
-        'Secure Admin Dashboard',
-        'Backend API Architecture',
-        'Database Workflow Management',
-        'Analytics & Reports',
-        'Live Deployment'
-      ]
-    },
-    python: {
-      title:`Create a ${domain} Python Data Automation Suite`,
-      intro:`Build a python utility that automates records, analytics and export reports.`,
-      objective:`Reduce manual business processing and improve data insights.`,
-      modules:[
-        'Data Input Parser',
-        'Validation Engine',
-        'Analytics Processor',
-        'Summary Report Generator',
-        'Charts Export',
-        'Automation Logs'
-      ]
-    },
-    qa: {
-      title:`Build QA Testing Suite for ${domain} Application`,
-      intro:`Create manual + automation testing framework.`,
-      objective:`Ensure bug free production quality delivery.`,
-      modules:[
-        'Manual Test Case Sheet',
-        'Automation Script Pack',
-        'API Testing',
-        'Bug Tracking',
-        'Regression Testing',
-        'Coverage Report'
-      ]
-    },
-    devops: {
-      title:`Build CI/CD Pipeline for ${domain} Cloud App`,
-      intro:`Automate build, test and deployment pipeline.`,
-      objective:`Improve release speed and infrastructure reliability.`,
-      modules:[
-        'Git Pipeline',
-        'Docker Setup',
-        'Auto Testing',
-        'Cloud Deployment',
-        'Monitoring',
-        'Rollback Strategy'
-      ]
-    },
-    general: {
-      title:`Build a Custom ${domain} Technical Project`,
-      intro:`Develop a role specific practical software engineering project.`,
-      objective:`Demonstrate coding, planning, architecture and production understanding.`,
-      modules:[
-        'Planning',
-        'Architecture',
-        'Development',
-        'Testing',
-        'Deployment',
-        'Documentation'
-      ]
-    }
-  };
-
-  const base = maps[roleBucket];
-
   return {
-    projectTitle: base.title,
-    projectIntroduction: base.intro,
-    businessObjective: base.objective,
-    functionalModules: base.modules,
-    technicalRequirements: [
-      `Use candidate relevant stack: ${skills.join(', ') || 'Role based technologies'}`,
-      'Professional folder architecture',
+    projectTitle:`Build a ${domain} ${roleBucket.toUpperCase()} Enterprise Solution`,
+    projectIntroduction:`Develop a practical enterprise grade software solution focused on ${domain} business workflows.`,
+    businessObjective:`Demonstrate architecture understanding, implementation quality, and real-world production thinking.`,
+    functionalModules:[
+      'Planning and Requirement Analysis',
+      'Main Core Development',
+      'Admin or Management Workflow',
+      'Reporting and Monitoring',
+      'Testing and Validation',
+      'Deployment and Documentation'
+    ],
+    technicalRequirements:[
+      `Use stack: ${skills.join(', ')}`,
       'Clean coding standards',
-      'Deployment ready build',
+      'Professional architecture',
+      'Deployment ready output',
       'README documentation',
-      'Production level submission'
+      'Screenshots/demo'
     ],
     deliverables:[
-      'Complete source code',
-      'Live deployed URL',
-      'Setup documentation',
-      'Screenshots or demo video'
+      'Source code repository',
+      'Live deployment',
+      'Setup document',
+      'Demo assets'
     ],
     evaluationCriteria:[
-      'Architecture Quality',
-      'Feature Completeness',
-      'Code Standard',
-      'Business Logic Understanding'
+      'Code quality',
+      'Feature completeness',
+      'Business understanding',
+      'Submission professionalism'
     ],
     timeline:'3 Working Days',
-    recommendedStack: skills.length ? skills : ['Role Based Stack']
+    recommendedStack:skills
   };
 }
 
@@ -202,17 +143,101 @@ async function extractResumeText(file){
     let txt = '';
     txt += ' ' + (file.originalname || '');
     txt += ' ' + (file.mimetype || '');
+
+    const cleanedName = (file.originalname || '')
+      .replace(/[_\-\.]/g,' ')
+      .replace(/pdf/gi,' ')
+      .toLowerCase();
+
+    txt += ' ' + cleanedName;
+
     return txt;
   }catch{
     return '';
   }
 }
 
-async function generateAssignmentWithAI(role,resumeText,skills){
+async function generateAssignmentWithAI(role,resumeText,skills,fullName,yearsExperience){
   const roleBucket = detectRoleBucket(role);
-  const domain = detectBusinessDomain(resumeText);
+  const domain = detectBusinessDomain(resumeText + ' ' + skills.join(' '));
 
-  return smartFallbackAssignment(roleBucket,domain,skills);
+  let seniority = 'Junior';
+  if(yearsExperience >= 5) seniority = 'Senior';
+  else if(yearsExperience >= 3) seniority = 'Mid Level';
+
+  let assignment = smartFallbackAssignment(roleBucket,domain,skills);
+
+  if(roleBucket === 'uiux'){
+    assignment.projectTitle = `${seniority} UX Transformation Case Study for ${domain} Mobile App`;
+    assignment.projectIntroduction = `Create a premium Figma based enterprise UX modernization project.`;
+    assignment.businessObjective = `Redesign customer onboarding, usability and visual interaction flow.`;
+    assignment.functionalModules = [
+      'Competitor UX Benchmark',
+      'User Journey Mapping',
+      'Low Fidelity Wireframes',
+      '18+ High Fidelity Screens',
+      'Clickable Prototype',
+      'Design System Documentation'
+    ];
+  }
+
+  else if(roleBucket === 'frontend'){
+    assignment.projectTitle = `${seniority} ${domain} Analytics Admin Dashboard Development`;
+    assignment.projectIntroduction = `Develop a production grade responsive React admin dashboard.`;
+    assignment.businessObjective = `Demonstrate reusable frontend architecture and polished UI implementation.`;
+    assignment.functionalModules = [
+      'JWT Login UI',
+      'Dashboard KPI Cards',
+      'Listing Tables',
+      'Search/Sort/Pagination',
+      'Notification Center',
+      'Responsive Mobile UI'
+    ];
+  }
+
+  else if(roleBucket === 'backend'){
+    assignment.projectTitle = `${seniority} ${domain} Enterprise Recruitment REST API System`;
+    assignment.projectIntroduction = `Build scalable Node backend workflow automation APIs.`;
+    assignment.businessObjective = `Create secure data processing and reporting APIs.`;
+    assignment.functionalModules = [
+      'JWT Authentication',
+      'Candidate CRUD APIs',
+      'Admin Authorization',
+      'Interview Scheduler',
+      'Report APIs',
+      'Swagger Docs'
+    ];
+  }
+
+  else if(roleBucket === 'fullstack'){
+    assignment.projectTitle = `${seniority} Complete ${domain} SaaS Hiring Automation Platform`;
+    assignment.projectIntroduction = `Build a full enterprise frontend + backend + admin automation platform.`;
+    assignment.businessObjective = `Demonstrate real SaaS level architecture and workflow implementation.`;
+    assignment.functionalModules = [
+      'Candidate Application Portal',
+      'Resume Upload Workflow',
+      'Secure Admin Dashboard',
+      'Assignment Generator Panel',
+      'Analytics Reports',
+      'Live Deployment'
+    ];
+  }
+
+  else if(roleBucket === 'python'){
+    assignment.projectTitle = `${seniority} ${domain} Python Automation Reporting Utility`;
+    assignment.projectIntroduction = `Develop a python based enterprise automation reporting tool.`;
+    assignment.businessObjective = `Automate data handling, analytics and report exports.`;
+    assignment.functionalModules = [
+      'Bulk Data Parser',
+      'Validation Engine',
+      'Summary Analytics',
+      'Export Reports',
+      'Automation Logs',
+      'Execution Utility'
+    ];
+  }
+
+  return assignment;
 }
 
 async function writeAuditLog(entry){
@@ -305,15 +330,23 @@ app.post('/api/career-apply', upload.single('resumeFile'), async (req,res)=>{
     }
 
     const resumeText = req.file ? await extractResumeText(req.file) : '';
-    const assignment = await generateAssignmentWithAI(appliedRole,resumeText,skills);
+    const enrichedSkills = enrichSkillsFromSignals(appliedRole,resumeText,skills);
+
+    const assignment = await generateAssignmentWithAI(
+      appliedRole,
+      resumeText,
+      enrichedSkills,
+      fullName,
+      yearsExperience
+    );
 
     const candidate = {
       fullName,
       email,
       appliedRole,
       yearsExperience,
-      skills,
-      hrScore: Math.min(98,72+(yearsExperience*4)+(skills.length*2)),
+      skills: enrichedSkills,
+      hrScore: Math.min(98,72+(yearsExperience*4)+(enrichedSkills.length*2)),
       assignment
     };
 
@@ -329,7 +362,7 @@ app.post('/api/career-apply', upload.single('resumeFile'), async (req,res)=>{
 
     await writeAuditLog({
       submittedAt:new Date().toISOString(),
-      fullName,email,appliedRole,yearsExperience,skills
+      fullName,email,appliedRole,yearsExperience,skills:enrichedSkills
     });
 
     return res.status(201).json({success:true, assignmentTitle:assignment.projectTitle});
