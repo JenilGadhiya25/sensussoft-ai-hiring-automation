@@ -1,0 +1,7 @@
+node_modules/
+.env
+webhook-server/.env
+audit-logs/
+*.pdf
+assignment-*.pdf
+.DS_Store

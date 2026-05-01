@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Local AI Hiring — Candidate Form</title>
+  <style>
+    body{font-family:Inter,system-ui,Segoe UI,Arial;background:#f6f8fa;color:#0b1220;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}
+    .card{background:#fff;padding:28px;border-radius:10px;box-shadow:0 6px 18px rgba(11,18,32,0.08);width:520px;max-width:95%}
+    h1{margin:0 0 16px;font-size:20px}
+    label{display:block;font-size:13px;margin-top:12px}
+    input[type=text],input[type=email],input[type=number],select,textarea{width:100%;padding:10px;border:1px solid #e3e8ee;border-radius:6px;margin-top:6px;font-size:14px}
+    .row{display:flex;gap:12px}
+    .row > *{flex:1}
+    button{margin-top:18px;padding:10px 14px;background:#0b6efd;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer}
+    .note{font-size:12px;color:#6b7280;margin-top:8px}
+    .result{margin-top:12px;padding:10px;border-radius:6px;background:#f1f5f9;color:#0b1220}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Candidate Application</h1>
+    <form id="candidateForm">
+      <label for="fullName">Full name *</label>
+      <input id="fullName" name="fullName" type="text" required />
+
+      <label for="email">Email *</label>
+      <input id="email" name="email" type="email" required />
+
+      <label for="appliedRole">Applied role *</label>
+      <input id="appliedRole" name="appliedRole" type="text" required />
+
+      <div class="row">
+        <div>
+          <label for="yearsExperience">Years of experience *</label>
+          <input id="yearsExperience" name="yearsExperience" type="number" min="0" step="0.1" required />
+        </div>
+        <div>
+          <label for="skills">Skills * (comma separated)</label>
+          <input id="skills" name="skills" type="text" placeholder="e.g. Node.js, React, SQL" required />
+        </div>
+      </div>
+
+      <label for="resumeUrl">Resume URL (optional)</label>
+      <input id="resumeUrl" name="resumeUrl" type="text" placeholder="https://..." />
+
+      <button type="submit">Submit Application</button>
+      <div class="note">This form POSTs JSON to <strong>http://localhost:4000/api/career-apply</strong></div>
+    </form>
+    <div id="result" class="result" style="display:none"></div>
+  </div>
+
+  <script>
+    const form = document.getElementById('candidateForm');
+    const resultEl = document.getElementById('result');
+
+    function showResult(msg, ok=true){
+      resultEl.style.display = 'block';
+      resultEl.style.background = ok ? '#ecfdf5' : '#fff1f2';
+      resultEl.textContent = msg;
+    }
+
+    form.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const data = {
+        fullName: document.getElementById('fullName').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        appliedRole: document.getElementById('appliedRole').value.trim(),
+        yearsExperience: Number(document.getElementById('yearsExperience').value),
+        skills: document.getElementById('skills').value.split(',').map(s=>s.trim()).filter(Boolean),
+        resumeUrl: document.getElementById('resumeUrl').value.trim() || undefined
+      };
+
+      if(!data.fullName || !data.email || !data.appliedRole || isNaN(data.yearsExperience) || data.skills.length===0){
+        showResult('Please fill in all required fields.', false);
+        return;
+      }
+
+      try{
+        const resp = await fetch('http://localhost:4000/api/career-apply', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        const json = await resp.json();
+        if(resp.ok){
+          showResult('Application submitted — received id: ' + (json.profile && json.profile.id ? json.profile.id : 'unknown'));
+          form.reset();
+        } else {
+          showResult('Server error: ' + (json.error || JSON.stringify(json)), false);
+        }
+      } catch(err){
+        showResult('Network error: ' + err.message, false);
+      }
+    });
+  </script>
+</body>
+</html>
