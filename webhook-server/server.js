@@ -3,15 +3,13 @@ const express = require('express');
 const nodemailer = require('nodemailer');
 const PDFDocument = require('pdfkit');
 const multer = require('multer');
-const pdfParse = require('pdf-parse');
+
 const { createRepo } = require('../github-demo/githubService');
-const fs = require('fs').promises;
 const normalfs = require('fs');
 const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
-const AUDIT_LOG_PATH = process.env.AUDIT_LOG_PATH || path.join(__dirname, '../audit-logs/candidate-log.json');
 const IS_VERCEL = !!process.env.VERCEL;
 
 const upload = multer({ dest: IS_VERCEL ? '/tmp' : __dirname });
@@ -30,7 +28,7 @@ const TECH_SKILL_KEYWORDS = [
   'ui','ux','testing','qa','devops','docker','aws','git','github','api',
   'express','java','php','laravel','angular','flutter','dart','android',
   'ios','swift','kotlin','machine learning','ai','ml','data science',
-  'cyber security','wordpress','cloud','linux','c++','c#'
+  'cyber security','wordpress','cloud','linux','c++','c#','full stack'
 ];
 
 const transporter = nodemailer.createTransport({
@@ -51,7 +49,9 @@ app.use((req, res, next) => {
 });
 
 async function generateAssignmentPDF(candidate) {
-  const pdfPath = IS_VERCEL ? `/tmp/assignment-${candidate.id}.pdf` : path.join(__dirname, `assignment-${candidate.id}.pdf`);
+  const pdfPath = IS_VERCEL
+    ? `/tmp/assignment-${Date.now()}.pdf`
+    : path.join(__dirname, `assignment-${Date.now()}.pdf`);
 
   return new Promise((resolve) => {
     const doc = new PDFDocument({ margin: 50 });
@@ -69,36 +69,31 @@ async function generateAssignmentPDF(candidate) {
     doc.moveDown();
 
     doc.fontSize(16).text('1. Assignment Overview');
-    doc.fontSize(12).text(`As part of our technical recruitment evaluation process, you are required to complete the following practical assignment titled "${candidate.assignment.title}". This assignment is intended to assess your coding standards, technical understanding, logical thinking, project structuring, and problem solving abilities in a real-world implementation scenario.`);
+    doc.fontSize(12).text(`You are required to complete the professional technical assignment titled "${candidate.assignment.title}". This practical evaluation is designed to measure your technical coding quality, architecture understanding, UI/UX thinking, backend logic capability, debugging approach, deployment knowledge and documentation discipline.`);
     doc.moveDown();
 
     doc.fontSize(16).text('2. Project Objective');
-    doc.fontSize(12).text(`You are expected to design and develop a functional technical solution relevant to the role of ${candidate.appliedRole}. The assignment must reflect professional implementation standards and proper use of the following technologies/skills: ${candidate.assignment.requirements.join(', ')}.`);
+    doc.fontSize(12).text(`The assignment must be developed according to real industry implementation standards and must clearly demonstrate your hands-on usage of these technologies: ${candidate.assignment.requirements.join(', ')}.`);
     doc.moveDown();
 
     doc.fontSize(16).text('3. Functional Requirements');
     candidate.assignment.requirements.forEach((req, i) => {
-      doc.fontSize(12).text(`${i+1}. ${req}`);
+      doc.fontSize(12).text(`${i + 1}. ${req}`);
     });
     doc.moveDown();
 
     doc.fontSize(16).text('4. Submission Guidelines');
-    doc.fontSize(12).text('• Candidate must regularly push code commits to the assigned private GitHub repository.\n• Code structure should be modular, clean, and production readable.\n• README documentation must contain setup and execution instructions.\n• Proper comments should be added where required.\n• Final project must be completed within the mentioned deadline.');
+    doc.fontSize(12).text('• Push code regularly to assigned GitHub repository.\n• Maintain proper project structure.\n• Add README setup instructions.\n• Use comments where needed.\n• Final delivery must be within deadline.');
     doc.moveDown();
 
     doc.fontSize(16).text('5. Evaluation Criteria');
-    doc.fontSize(12).text('Your submission will be evaluated based on code quality, folder structure, technical accuracy, UI/UX implementation (if applicable), API handling, database design (if applicable), optimization, and documentation quality.');
+    doc.fontSize(12).text('Evaluation will be based on technical accuracy, clean coding practices, architecture, database/API logic, deployment understanding, documentation, and production readiness.');
     doc.moveDown();
 
     doc.fontSize(16).text('6. Assigned Private GitHub Repository');
-    doc.fontSize(12).text(`${candidate.githubRepoUrl}`);
+    doc.fontSize(12).text(`${candidate.githubRepoUrl || 'Repository will be shared shortly.'}`);
     doc.moveDown(2);
 
-    doc.text('We appreciate your interest in joining SensusSoft and look forward to reviewing your technical implementation.', {
-      align: 'left'
-    });
-
-    doc.moveDown(2);
     doc.text('Regards,');
     doc.text('SensusSoft HR & Technical Recruitment Team');
 
@@ -107,118 +102,96 @@ async function generateAssignmentPDF(candidate) {
   });
 }
 
-function extractDetectedSkills(text) {
-  const lower = text.toLowerCase();
-  return ALLOWED_IT_SKILLS.filter(skill => lower.includes(skill));
-}
-
 app.post('/api/career-apply', upload.single('resumeFile'), async (req, res) => {
   try {
-   const body = req.body || {};
+    const body = req.body || {};
 
-const fullName = String(body.fullName || '').trim();
-const email = String(body.email || '').trim();
-const appliedRole = String(body.appliedRole || '').trim();
-const yearsExperience = String(body.yearsExperience || '').trim();
-const rawSkills = String(body.skills || '').trim();
+    const fullName = String(body.fullName || '').trim();
+    const email = String(body.email || '').trim();
+    const appliedRole = String(body.appliedRole || '').trim();
+    const yearsExperience = String(body.yearsExperience || '').trim();
+    const rawSkills = String(body.skills || '').trim();
 
-if (!fullName || !email || !appliedRole || !yearsExperience || !rawSkills) {
-  return res.status(400).json({ error: 'Missing required fields.' });
-}
-
-let manualSkills = rawSkills.split(',').map(s => s.trim()).filter(Boolean);
-    let resumeDetectedSkills = [];
-    if (req.file) {
-      try {
-        const dataBuffer = await fs.readFile(req.file.path);
-        const pdfData = await pdfParse(dataBuffer);
-        resumeDetectedSkills = extractDetectedSkills(pdfData.text || '');
-      } catch (err) {
-        console.error('Resume parse failed:', err.message);
-      }
+    if (!fullName || !email || !appliedRole || !yearsExperience || !rawSkills) {
+      return res.status(400).json({ error: 'Missing required fields.' });
     }
 
-    const mergedSkills = [...new Set([...manualSkills, ...resumeDetectedSkills])];
+    let manualSkills = rawSkills.split(',').map(s => s.trim()).filter(Boolean);
+    const mergedSkills = [...new Set([...manualSkills])];
+
     const roleIsTech = TECH_ROLE_KEYWORDS.some(word =>
-  appliedRole.toLowerCase().includes(word)
-);
+      appliedRole.toLowerCase().includes(word)
+    );
 
-const matchedSkills = mergedSkills.filter(skill =>
-  TECH_SKILL_KEYWORDS.some(word => String(skill).toLowerCase().includes(word))
-);
+    const matchedSkills = mergedSkills.filter(skill =>
+      TECH_SKILL_KEYWORDS.some(word => String(skill).toLowerCase().includes(word))
+    );
 
-if (!roleIsTech && matchedSkills.length === 0) {
-  return res.status(400).json({
-    error: 'Currently we are accepting applications only for IT, Software, Technical Engineering, and Digital Technology related positions.'
-  });
-}
+    if (!roleIsTech && matchedSkills.length === 0) {
+      return res.status(400).json({
+        error: 'Currently we are accepting applications only for IT, Software, Technical Engineering, and Digital Technology related positions.'
+      });
+    }
 
-const finalSkills = matchedSkills.length > 0 ? matchedSkills : mergedSkills;
+    const finalSkills = matchedSkills.length > 0 ? matchedSkills : mergedSkills;
 
-const profile = {
-fullName,
-email,
-appliedRole,
-yearsExperience: Number(yearsExperience),
-skills: finalSkills
-};
+    const profile = {
+      fullName,
+      email,
+      appliedRole,
+      yearsExperience: Number(yearsExperience),
+      skills: finalSkills
+    };
 
     let assignmentTitle = `Technical Engineering Assignment for ${profile.appliedRole}`;
     let assignmentRequirements = [];
 
     if (profile.appliedRole.toLowerCase().includes('react')) {
-      assignmentTitle = 'Build a Candidate Management Dashboard';
+      assignmentTitle = 'Enterprise Candidate Management Dashboard';
       assignmentRequirements = [
-        'Build a responsive React dashboard with authentication',
-        'Add candidate list with filter/search',
-        'Integrate one public API',
+        'Build complete responsive React admin dashboard',
+        'Add login authentication and route protection',
+        'Create candidate table with search, filter, delete, edit',
+        'Integrate public API and analytics cards',
         `Mandatory stack: ${profile.skills.join(', ')}`,
-        'Use modular reusable components',
-        'Complete submission within 3 days'
+        'Deploy and document in README'
       ];
     } else if (profile.appliedRole.toLowerCase().includes('node')) {
-      assignmentTitle = 'Build a REST API Recruitment Backend';
+      assignmentTitle = 'Recruitment REST API Backend System';
       assignmentRequirements = [
-        'Create Node.js + Express recruitment APIs',
-        'Implement CRUD and validation middleware',
-        'Connect MongoDB/JSON datastore',
+        'Create Node.js + Express production backend',
+        'CRUD APIs with middleware validation',
+        'MongoDB or JSON storage integration',
+        'Postman API documentation',
         `Mandatory stack: ${profile.skills.join(', ')}`,
-        'Provide Postman documentation',
-        'Complete submission within 3 days'
+        'Deploy backend and document usage'
       ];
     } else if (profile.appliedRole.toLowerCase().includes('full stack')) {
-      assignmentTitle = 'Build an End-to-End Hiring Portal';
+      assignmentTitle = 'Complete Hiring Management Web Application';
       assignmentRequirements = [
-        'Create frontend candidate form and backend API integration',
-        'Store submissions and display admin listing',
+        'Build frontend candidate application form',
+        'Build backend API submission handling',
+        'Create admin panel to view all candidates',
+        'Add login system and candidate status management',
         `Mandatory stack: ${profile.skills.join(', ')}`,
-        'Document setup in README',
-        'Complete submission within 4 days'
+        'Deploy full project live with README'
       ];
     } else if (profile.appliedRole.toLowerCase().includes('python')) {
-      assignmentTitle = 'Build a Python Data Processing Utility';
+      assignmentTitle = 'Python Candidate Data Automation Utility';
       assignmentRequirements = [
-        'Create Python processing script or Flask utility',
-        'Generate candidate data summary report',
+        'Build Python/Flask automation utility',
+        'Process candidate records and generate reports',
+        'Create exportable summary file',
         `Mandatory stack: ${profile.skills.join(', ')}`,
-        'Write documented functions',
-        'Complete submission within 3 days'
-      ];
-    } else if (profile.appliedRole.toLowerCase().includes('ui/ux')) {
-      assignmentTitle = 'Design a Recruitment Dashboard UI/UX Case Study';
-      assignmentRequirements = [
-        'Design modern recruitment dashboard in Figma',
-        'Include analytics and candidate details screens',
-        `Mandatory tools: ${profile.skills.join(', ')}`,
-        'Share Figma file/screens',
-        'Complete submission within 3 days'
+        'Document execution process'
       ];
     } else {
       assignmentRequirements = [
-        `Build a mini technical project relevant to ${profile.appliedRole}`,
-        `Mandatory skills: ${profile.skills.join(', ')}`,
-        'Push code with proper commits',
-        'Complete submission within 3 days'
+        `Build a professional technical project relevant to ${profile.appliedRole}`,
+        `Mandatory technologies: ${profile.skills.join(', ')}`,
+        'Use production level folder structure',
+        'Push proper commits on repository',
+        'Deploy live and document project setup'
       ];
     }
 
@@ -246,8 +219,7 @@ skills: finalSkills
       ...profile,
       assignment: assignmentResult.assignment,
       githubRepoUrl: githubRepo ? githubRepo.url : undefined,
-      hrScore: assignmentResult.screening_score,
-      processedAt: new Date().toISOString()
+      hrScore: assignmentResult.screening_score
     };
 
     const pdfFile = await generateAssignmentPDF(processedCandidate);
@@ -265,7 +237,7 @@ Your HR screening score: ${processedCandidate.hrScore}/100
 Please find attached your technical assignment PDF.
 
 Private GitHub Repository:
-${processedCandidate.githubRepoUrl}
+${processedCandidate.githubRepoUrl || 'Will be shared shortly.'}
 
 Best regards,
 SensusSoft HR Team`,

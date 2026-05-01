@@ -74,18 +74,19 @@ form.addEventListener('submit', async (e)=>{
   fd.append('resumeFile', resume);
 
   try{
-    const resp = await fetch('http://localhost:4000/api/career-apply', {
+    const resp = await fetch('https://sensussoft-ai-hiring-automation.vercel.app/api/career-apply', {
       method:'POST',
       body: fd
     });
 
     const json = await resp.json();
-if(resp.ok){
-  alert('Application Submitted Successfully! Please check your email for the technical assignment.');
-  form.reset();
-  resultBox.style.display = 'none';
-}
-    else{
+
+    if(resp.ok){
+      alert('✅ Application Submitted Successfully!\nTechnical Assignment has been sent to candidate email.');
+      form.reset();
+      resultBox.style.display='none';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }else{
       showResult(json.error || 'Submission failed.', false);
     }
   }catch(err){
