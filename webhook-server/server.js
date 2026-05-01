@@ -7,6 +7,7 @@ const path = require('path');
 const fetch = require('node-fetch');
 const PDFDocument = require('pdfkit');
 const nodemailer = require('nodemailer');
+const { createRepo } = require('../github-demo/githubService');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -65,33 +66,28 @@ function enrichSkillsFromSignals(role,resumeText,skills){
     enriched.add('Frontend Architecture');
     enriched.add('Responsive UI');
   }
-
   if(/node|backend|express|api|server/.test(signal)){
     enriched.add('Node.js');
     enriched.add('REST API');
     enriched.add('Database Logic');
   }
-
   if(/full stack|mern|developer|software engineer/.test(signal)){
     enriched.add('React');
     enriched.add('Node.js');
     enriched.add('MongoDB');
     enriched.add('Full Stack Workflow');
   }
-
   if(/ui|ux|figma|designer|product design/.test(signal)){
     enriched.add('Figma');
     enriched.add('Wireframing');
     enriched.add('Prototype');
     enriched.add('Design System');
   }
-
   if(/python|automation|django|flask/.test(signal)){
     enriched.add('Python');
     enriched.add('Automation');
     enriched.add('Reporting');
   }
-
   if(/qa|tester|testing/.test(signal)){
     enriched.add('Manual Testing');
     enriched.add('Automation Testing');
@@ -144,11 +140,7 @@ async function extractResumeText(file){
     txt += ' ' + (file.originalname || '');
     txt += ' ' + (file.mimetype || '');
 
-    const cleanedName = (file.originalname || '')
-      .replace(/[_\-\.]/g,' ')
-      .replace(/pdf/gi,' ')
-      .toLowerCase();
-
+    const cleanedName = (file.originalname || '').replace(/[_\-\.]/g,' ').replace(/pdf/gi,' ').toLowerCase();
     txt += ' ' + cleanedName;
 
     return txt;
@@ -169,72 +161,19 @@ async function generateAssignmentWithAI(role,resumeText,skills,fullName,yearsExp
 
   if(roleBucket === 'uiux'){
     assignment.projectTitle = `${seniority} UX Transformation Case Study for ${domain} Mobile App`;
-    assignment.projectIntroduction = `Create a premium Figma based enterprise UX modernization project.`;
-    assignment.businessObjective = `Redesign customer onboarding, usability and visual interaction flow.`;
-    assignment.functionalModules = [
-      'Competitor UX Benchmark',
-      'User Journey Mapping',
-      'Low Fidelity Wireframes',
-      '18+ High Fidelity Screens',
-      'Clickable Prototype',
-      'Design System Documentation'
-    ];
-  }
-
-  else if(roleBucket === 'frontend'){
+    assignment.functionalModules = ['Competitor UX Benchmark','User Journey Mapping','Low Fidelity Wireframes','18+ High Fidelity Screens','Clickable Prototype','Design System Documentation'];
+  }else if(roleBucket === 'frontend'){
     assignment.projectTitle = `${seniority} ${domain} Analytics Admin Dashboard Development`;
-    assignment.projectIntroduction = `Develop a production grade responsive React admin dashboard.`;
-    assignment.businessObjective = `Demonstrate reusable frontend architecture and polished UI implementation.`;
-    assignment.functionalModules = [
-      'JWT Login UI',
-      'Dashboard KPI Cards',
-      'Listing Tables',
-      'Search/Sort/Pagination',
-      'Notification Center',
-      'Responsive Mobile UI'
-    ];
-  }
-
-  else if(roleBucket === 'backend'){
+    assignment.functionalModules = ['JWT Login UI','Dashboard KPI Cards','Listing Tables','Search/Sort/Pagination','Notification Center','Responsive Mobile UI'];
+  }else if(roleBucket === 'backend'){
     assignment.projectTitle = `${seniority} ${domain} Enterprise Recruitment REST API System`;
-    assignment.projectIntroduction = `Build scalable Node backend workflow automation APIs.`;
-    assignment.businessObjective = `Create secure data processing and reporting APIs.`;
-    assignment.functionalModules = [
-      'JWT Authentication',
-      'Candidate CRUD APIs',
-      'Admin Authorization',
-      'Interview Scheduler',
-      'Report APIs',
-      'Swagger Docs'
-    ];
-  }
-
-  else if(roleBucket === 'fullstack'){
+    assignment.functionalModules = ['JWT Authentication','Candidate CRUD APIs','Admin Authorization','Interview Scheduler','Report APIs','Swagger Docs'];
+  }else if(roleBucket === 'fullstack'){
     assignment.projectTitle = `${seniority} Complete ${domain} SaaS Hiring Automation Platform`;
-    assignment.projectIntroduction = `Build a full enterprise frontend + backend + admin automation platform.`;
-    assignment.businessObjective = `Demonstrate real SaaS level architecture and workflow implementation.`;
-    assignment.functionalModules = [
-      'Candidate Application Portal',
-      'Resume Upload Workflow',
-      'Secure Admin Dashboard',
-      'Assignment Generator Panel',
-      'Analytics Reports',
-      'Live Deployment'
-    ];
-  }
-
-  else if(roleBucket === 'python'){
+    assignment.functionalModules = ['Candidate Application Portal','Resume Upload Workflow','Secure Admin Dashboard','Assignment Generator Panel','Analytics Reports','Live Deployment'];
+  }else if(roleBucket === 'python'){
     assignment.projectTitle = `${seniority} ${domain} Python Automation Reporting Utility`;
-    assignment.projectIntroduction = `Develop a python based enterprise automation reporting tool.`;
-    assignment.businessObjective = `Automate data handling, analytics and report exports.`;
-    assignment.functionalModules = [
-      'Bulk Data Parser',
-      'Validation Engine',
-      'Summary Analytics',
-      'Export Reports',
-      'Automation Logs',
-      'Execution Utility'
-    ];
+    assignment.functionalModules = ['Bulk Data Parser','Validation Engine','Summary Analytics','Export Reports','Automation Logs','Execution Utility'];
   }
 
   return assignment;
@@ -274,6 +213,7 @@ async function generateAssignmentPDF(candidate){
     doc.text(`Applied Role: ${candidate.appliedRole}`);
     doc.text(`HR Screening Score: ${candidate.hrScore}/100`);
     doc.text(`Deadline: ${candidate.assignment.timeline}`);
+    doc.text(`Private GitHub Repository: ${candidate.githubRepoUrl}`);
     doc.moveDown();
 
     doc.fontSize(16).text('1. Assigned Project Title');
@@ -332,13 +272,19 @@ app.post('/api/career-apply', upload.single('resumeFile'), async (req,res)=>{
     const resumeText = req.file ? await extractResumeText(req.file) : '';
     const enrichedSkills = enrichSkillsFromSignals(appliedRole,resumeText,skills);
 
-    const assignment = await generateAssignmentWithAI(
-      appliedRole,
-      resumeText,
-      enrichedSkills,
-      fullName,
-      yearsExperience
-    );
+    const assignment = await generateAssignmentWithAI(appliedRole,resumeText,enrichedSkills,fullName,yearsExperience);
+
+    let githubRepo = null;
+    try{
+      githubRepo = await createRepo({
+        fullName,
+        role: appliedRole,
+        assignmentTitle: assignment.projectTitle,
+        assignmentRequirements: assignment.functionalModules
+      });
+    }catch(err){
+      console.log('GitHub Repo Create Failed =>', err.message);
+    }
 
     const candidate = {
       fullName,
@@ -347,7 +293,8 @@ app.post('/api/career-apply', upload.single('resumeFile'), async (req,res)=>{
       yearsExperience,
       skills: enrichedSkills,
       hrScore: Math.min(98,72+(yearsExperience*4)+(enrichedSkills.length*2)),
-      assignment
+      assignment,
+      githubRepoUrl: githubRepo ? githubRepo.url : 'Repository generation pending'
     };
 
     const pdfFile = await generateAssignmentPDF(candidate);
@@ -356,16 +303,30 @@ app.post('/api/career-apply', upload.single('resumeFile'), async (req,res)=>{
       from: SMTP_EMAIL,
       to: email,
       subject: 'SensusSoft Technical Evaluation Assignment',
-      text:`Dear ${fullName}, Please find attached your personalized technical assignment.`,
+      text:`Dear ${fullName},
+
+Please find attached your personalized technical assignment.
+
+Assigned Private GitHub Repository:
+${candidate.githubRepoUrl}
+
+You are required to push all project commits only on this repository.
+
+Regards,
+SensusSoft HR Team`,
       attachments:[{ filename:`Technical_Assignment_${fullName}.pdf`, path:pdfFile }]
     });
 
     await writeAuditLog({
       submittedAt:new Date().toISOString(),
-      fullName,email,appliedRole,yearsExperience,skills:enrichedSkills
+      fullName,email,appliedRole,yearsExperience,skills:enrichedSkills,githubRepoUrl:candidate.githubRepoUrl
     });
 
-    return res.status(201).json({success:true, assignmentTitle:assignment.projectTitle});
+    return res.status(201).json({
+      success:true,
+      assignmentTitle:assignment.projectTitle,
+      githubRepoUrl:candidate.githubRepoUrl
+    });
 
   }catch(err){
     console.error('SERVER ERROR =>',err);
