@@ -5,7 +5,6 @@ const fs = require('fs').promises;
 const normalfs = require('fs');
 const path = require('path');
 const fetch = require('node-fetch');
-const pdfParse = require('pdf-parse');
 const PDFDocument = require('pdfkit');
 const nodemailer = require('nodemailer');
 
@@ -31,340 +30,195 @@ const upload = multer({ dest: IS_VERCEL ? '/tmp' : path.join(__dirname, 'uploads
 
 const transporter = nodemailer.createTransport({
   service:'gmail',
-  auth:{
-    user:SMTP_EMAIL,
-    pass:SMTP_PASS
-  }
+  auth:{ user:SMTP_EMAIL, pass:SMTP_PASS }
 });
 
 function detectRoleBucket(role=''){
   const r = role.toLowerCase();
-
   if(/ui|ux|product designer|web designer|figma|graphic/.test(r)) return 'uiux';
-  if(/frontend|react|angular|vue|html|css|javascript ui/.test(r)) return 'frontend';
+  if(/frontend|react|angular|vue|html|css|javascript/.test(r)) return 'frontend';
   if(/backend|node|express|api developer|server/.test(r)) return 'backend';
-  if(/full stack|mern|mean|software engineer|web developer/.test(r)) return 'fullstack';
+  if(/full stack|mern|mean|software engineer|web developer|developer/.test(r)) return 'fullstack';
   if(/python|flask|django|automation|data/.test(r)) return 'python';
   if(/qa|tester|testing/.test(r)) return 'qa';
-  if(/devops|cloud|aws|deployment|ci\/cd/.test(r)) return 'devops';
+  if(/devops|cloud|aws|deployment/.test(r)) return 'devops';
   return 'general';
 }
 
-function detectBusinessDomain(resume=''){
-  const t = resume.toLowerCase();
-
-  if(/healthcare|doctor|patient|clinic|hospital|medical/.test(t)) return 'healthcare';
-  if(/ecommerce|shopping|cart|product order/.test(t)) return 'ecommerce';
-  if(/food|restaurant|delivery|zomato|swiggy/.test(t)) return 'food';
-  if(/crm|lead management|sales/.test(t)) return 'crm';
-  if(/fintech|bank|wallet|payment/.test(t)) return 'fintech';
-  if(/travel|hotel|booking|tour/.test(t)) return 'travel';
-  if(/school|student|education|learning/.test(t)) return 'education';
-  if(/inventory|stock management|warehouse/.test(t)) return 'inventory';
-  if(/social media|chat|community/.test(t)) return 'social';
-  if(/dashboard|analytics|report/.test(t)) return 'analytics';
-  return 'business';
+function detectBusinessDomain(text=''){
+  const t = text.toLowerCase();
+  if(/health|doctor|patient|medical|hospital/.test(t)) return 'Healthcare';
+  if(/shop|ecommerce|cart|product/.test(t)) return 'Ecommerce';
+  if(/food|restaurant|delivery/.test(t)) return 'Food Delivery';
+  if(/finance|bank|wallet|payment/.test(t)) return 'Fintech';
+  if(/travel|hotel|booking/.test(t)) return 'Travel';
+  if(/school|student|education/.test(t)) return 'Education';
+  if(/crm|lead|sales/.test(t)) return 'CRM';
+  return 'Business Automation';
 }
 
 function smartFallbackAssignment(roleBucket, domain, skills){
-  const map = {
+  const maps = {
     uiux: {
-      projectTitle:`Design a Complete ${domain} Mobile Experience`,
-      projectIntroduction:`Create an enterprise-grade Figma based UX case study for a ${domain} mobile and web platform.`,
-      businessObjective:`Build an intuitive and modern user experience that solves real customer journey problems in the ${domain} industry.`,
-      functionalModules:[
-        'User Persona Research & Competitor Benchmarking',
-        'Low Fidelity Wireframe Planning',
+      title:`Design a Premium ${domain} User Experience Platform`,
+      intro:`Create a full enterprise UI/UX case study and clickable prototype for a ${domain} based mobile/web application.`,
+      objective:`The company wants a world-class digital user journey that improves usability, engagement, retention and conversion.`,
+      modules:[
+        'Market Research and Competitor UX Analysis',
+        'User Persona Mapping and Journey Flow',
+        'Low Fidelity Wireframe Blueprint',
         'High Fidelity Figma Screen Design',
-        'Interactive Clickable Prototype',
-        'Design System & Component Library',
-        'Usability Improvement Notes'
-      ],
-      technicalRequirements:[
-        'Minimum 15 designed screens',
-        'Complete design system tokens',
-        'User flow diagrams',
-        'Responsive desktop + mobile view',
-        'Prototype interactions',
-        'Case study explanation PDF'
+        'Interactive Prototype with Click Flow',
+        'Design System and Component Documentation'
       ]
     },
-
     frontend: {
-      projectTitle:`Build a Responsive ${domain} Analytics Dashboard`,
-      projectIntroduction:`Develop a frontend production-ready web dashboard with rich UI, charts, and responsive workflows.`,
-      businessObjective:`Allow end users to manage and monitor all ${domain} related activities using an elegant frontend interface.`,
-      functionalModules:[
-        'Login & Authentication Screens',
-        'Dashboard KPI Cards and Graphs',
-        'Listing Table with Search Filter Pagination',
-        'Profile and Settings Module',
-        'Notification and Status UI',
-        'Responsive Mobile Adaptation'
-      ],
-      technicalRequirements:[
-        'React production components',
-        'Reusable hooks and state management',
-        'API integration with dummy/mock backend',
-        'Charts and tables',
-        'Clean CSS/UI architecture',
-        'Deployment on Vercel/Netlify'
+      title:`Build a Responsive ${domain} Admin Dashboard`,
+      intro:`Develop a frontend production grade dashboard system with modern UI, graphs, and reusable components.`,
+      objective:`The dashboard should help business managers monitor and control all ${domain} operations efficiently.`,
+      modules:[
+        'Secure Login Interface',
+        'Dashboard Analytics Cards',
+        'Advanced Listing Tables',
+        'Search Filter and Pagination',
+        'Notification and Settings Screens',
+        'Responsive Mobile UI'
       ]
     },
-
     backend: {
-      projectTitle:`Develop a ${domain} REST API Management System`,
-      projectIntroduction:`Build a scalable backend server architecture to handle enterprise ${domain} workflows.`,
-      businessObjective:`Provide secure APIs, reporting endpoints, and business logic automation for the company.`,
-      functionalModules:[
-        'JWT Authentication APIs',
-        'Master CRUD Resource APIs',
-        'Admin Reporting APIs',
-        'Status Update Workflow',
-        'Validation Middleware',
-        'Swagger/Postman Documentation'
-      ],
-      technicalRequirements:[
-        'Node + Express server',
-        'MongoDB/MySQL schema',
-        'Production middleware',
-        'Error handling',
-        'Postman collection',
-        'Deployable backend'
+      title:`Develop a ${domain} Enterprise REST API`,
+      intro:`Build a secure backend architecture for business process automation.`,
+      objective:`The APIs must handle all operational data flow, validations, security and admin reporting.`,
+      modules:[
+        'JWT Auth APIs',
+        'Master CRUD APIs',
+        'Role Middleware',
+        'Admin Reports',
+        'Status Workflow APIs',
+        'Swagger Documentation'
       ]
     },
-
     fullstack: {
-      projectTitle:`Build a Complete ${domain} SaaS Management Platform`,
-      projectIntroduction:`Develop a real-world enterprise software with frontend, backend, admin, and reporting.`,
-      businessObjective:`Digitize and automate the full business process of a ${domain} company using a scalable software platform.`,
-      functionalModules:[
-        'Candidate/User Side Application',
-        'Admin Management Dashboard',
-        'Secure Backend APIs',
-        'Database & Status Workflow',
-        'Reports and Analytics',
-        'Deployment and Documentation'
-      ],
-      technicalRequirements:[
-        'React frontend',
-        'Node backend',
-        'MongoDB integration',
-        'Authentication',
-        'Role management',
-        'Live deployment'
+      title:`Build a Complete ${domain} SaaS Hiring Platform`,
+      intro:`Create a full frontend + backend + admin + analytics enterprise application.`,
+      objective:`Digitize and automate the entire ${domain} business lifecycle with scalable architecture.`,
+      modules:[
+        'Public Candidate/User Portal',
+        'Secure Admin Dashboard',
+        'Backend API Architecture',
+        'Database Workflow Management',
+        'Analytics & Reports',
+        'Live Deployment'
       ]
     },
-
     python: {
-      projectTitle:`Create a ${domain} Data Automation Utility`,
-      projectIntroduction:`Develop a Python automation solution to process, analyze, and generate reports.`,
-      businessObjective:`Reduce manual effort and improve data decision making in ${domain} operations.`,
-      functionalModules:[
-        'Input Data Parsing',
-        'Cleaning and Validation',
-        'Analytics Engine',
-        'Summary Report Generation',
-        'Graph Visualization',
-        'Export Utility'
-      ],
-      technicalRequirements:[
-        'Python scripts',
-        'Pandas processing',
-        'Auto report export',
-        'CLI or Flask wrapper',
-        'Error logs',
-        'Documentation'
+      title:`Create a ${domain} Python Data Automation Suite`,
+      intro:`Build a python utility that automates records, analytics and export reports.`,
+      objective:`Reduce manual business processing and improve data insights.`,
+      modules:[
+        'Data Input Parser',
+        'Validation Engine',
+        'Analytics Processor',
+        'Summary Report Generator',
+        'Charts Export',
+        'Automation Logs'
       ]
     },
-
     qa: {
-      projectTitle:`Build a Testing Framework for ${domain} Application`,
-      projectIntroduction:`Create a full QA automation suite to test a software application in ${domain}.`,
-      businessObjective:`Ensure enterprise quality assurance and bug free release cycle.`,
-      functionalModules:[
-        'Manual Test Cases',
-        'Automation UI Scripts',
+      title:`Build QA Testing Suite for ${domain} Application`,
+      intro:`Create manual + automation testing framework.`,
+      objective:`Ensure bug free production quality delivery.`,
+      modules:[
+        'Manual Test Case Sheet',
+        'Automation Script Pack',
         'API Testing',
-        'Bug Logging',
-        'Regression Pack',
+        'Bug Tracking',
+        'Regression Testing',
         'Coverage Report'
-      ],
-      technicalRequirements:[
-        'Cypress/Selenium',
-        'Postman tests',
-        'Bug sheet',
-        'Reports',
-        'CI execution',
-        'Documentation'
       ]
     },
-
     devops: {
-      projectTitle:`Create CI/CD Pipeline for ${domain} Cloud Platform`,
-      projectIntroduction:`Automate build, testing, deployment and monitoring workflow for software delivery.`,
-      businessObjective:`Reduce release time and improve deployment reliability.`,
-      functionalModules:[
-        'Git Integration',
-        'Build Automation',
-        'Testing Pipeline',
-        'Docker Containerization',
+      title:`Build CI/CD Pipeline for ${domain} Cloud App`,
+      intro:`Automate build, test and deployment pipeline.`,
+      objective:`Improve release speed and infrastructure reliability.`,
+      modules:[
+        'Git Pipeline',
+        'Docker Setup',
+        'Auto Testing',
         'Cloud Deployment',
-        'Monitoring Alerts'
-      ],
-      technicalRequirements:[
-        'GitHub Actions/Jenkins',
-        'Docker',
-        'Cloud hosting',
-        'Rollback config',
-        'Logs',
-        'DevOps documentation'
+        'Monitoring',
+        'Rollback Strategy'
       ]
     },
-
     general: {
-      projectTitle:`Custom ${domain} Technical Engineering Project`,
-      projectIntroduction:`Build a practical technical software solution relevant to your role.`,
-      businessObjective:`Demonstrate architecture, coding, and deployment capabilities.`,
-      functionalModules:[
+      title:`Build a Custom ${domain} Technical Project`,
+      intro:`Develop a role specific practical software engineering project.`,
+      objective:`Demonstrate coding, planning, architecture and production understanding.`,
+      modules:[
         'Planning',
+        'Architecture',
         'Development',
         'Testing',
-        'Documentation',
         'Deployment',
-        'Reporting'
-      ],
-      technicalRequirements:[
-        'Relevant stack',
-        'Professional coding',
-        'Version control',
-        'Testing',
-        'README',
-        'Live demo'
+        'Documentation'
       ]
     }
   };
 
-  const base = map[roleBucket];
+  const base = maps[roleBucket];
+
   return {
-    projectTitle: base.projectTitle,
-    projectIntroduction: base.projectIntroduction,
-    businessObjective: base.businessObjective,
-    functionalModules: base.functionalModules,
-    technicalRequirements: base.technicalRequirements,
+    projectTitle: base.title,
+    projectIntroduction: base.intro,
+    businessObjective: base.objective,
+    functionalModules: base.modules,
+    technicalRequirements: [
+      `Use candidate relevant stack: ${skills.join(', ') || 'Role based technologies'}`,
+      'Professional folder architecture',
+      'Clean coding standards',
+      'Deployment ready build',
+      'README documentation',
+      'Production level submission'
+    ],
     deliverables:[
-      'Complete source code repository',
-      'README setup guide',
-      'Demo screenshots/video',
-      'Final submission documentation'
+      'Complete source code',
+      'Live deployed URL',
+      'Setup documentation',
+      'Screenshots or demo video'
     ],
     evaluationCriteria:[
-      'Architecture & code quality',
-      'Business understanding',
-      'UI/UX or API completeness',
-      'Documentation & deployment'
+      'Architecture Quality',
+      'Feature Completeness',
+      'Code Standard',
+      'Business Logic Understanding'
     ],
-    timeline:'Complete within 3 working days',
-    recommendedStack: skills.length ? skills : ['Technology as per candidate profile']
+    timeline:'3 Working Days',
+    recommendedStack: skills.length ? skills : ['Role Based Stack']
   };
 }
 
-function cleanAIJson(text){
+async function extractResumeText(file){
   try{
-    let cleaned = text.replace(/```json|```/g,'').trim();
-    const first = cleaned.indexOf('{');
-    const last = cleaned.lastIndexOf('}');
-    if(first !== -1 && last !== -1){
-      cleaned = cleaned.substring(first,last+1);
-    }
-    cleaned = cleaned.replace(/,\s*}/g,'}').replace(/,\s*]/g,']');
-    return JSON.parse(cleaned);
+    let txt = '';
+    txt += ' ' + (file.originalname || '');
+    txt += ' ' + (file.mimetype || '');
+    return txt;
   }catch{
-    return null;
+    return '';
   }
 }
 
-async function generateAssignmentWithAI(role, resumeText, skills){
+async function generateAssignmentWithAI(role,resumeText,skills){
   const roleBucket = detectRoleBucket(role);
   const domain = detectBusinessDomain(resumeText);
 
-  const prompt = `
-Generate a VERY DETAILED enterprise software company technical assignment.
-
-Candidate Role Bucket: ${roleBucket}
-Business Domain: ${domain}
-Candidate Skills: ${skills.join(', ')}
-Resume Context: ${resumeText.slice(0,2000)}
-
-Need LONG realistic company assignment document.
-Must not be generic.
-Must be role specific.
-Must be domain specific.
-
-Return ONLY JSON:
-{
-"projectTitle":"",
-"projectIntroduction":"",
-"businessObjective":"",
-"functionalModules":["","","","","",""],
-"technicalRequirements":["","","","","",""],
-"deliverables":["","","",""],
-"evaluationCriteria":["","","",""],
-"timeline":"",
-"recommendedStack":["","",""]
-}
-`;
-
-  try{
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions',{
-      method:'POST',
-      headers:{
-        'Authorization':`Bearer ${OPENROUTER_API_KEY}`,
-        'Content-Type':'application/json'
-      },
-      body:JSON.stringify({
-        model:'google/gemma-3-27b-it:free',
-        messages:[
-          {role:'system',content:'You are an enterprise HR technical assignment generator.'},
-          {role:'user',content:prompt}
-        ],
-        temperature:1.4,
-        max_tokens:1500
-      })
-    });
-
-    const data = await response.json();
-    console.log('OPENROUTER =>', JSON.stringify(data));
-
-    const aiText = data?.choices?.[0]?.message?.content || '';
-    const parsed = cleanAIJson(aiText);
-
-    if(parsed) return parsed;
-
-    return smartFallbackAssignment(roleBucket, domain, skills);
-
-  }catch(err){
-    console.log('AI FAILED =>', err.message);
-    return smartFallbackAssignment(roleBucket, domain, skills);
-  }
-}
-async function extractResumeText(filePath){
-  try{
-    const dataBuffer = await fs.readFile(filePath);
-    const pdfData = await pdfParse(dataBuffer);
-    return (pdfData.text || '').replace(/\s+/g,' ').trim();
-  }catch(err){
-    console.log('Resume parse failed =>', err.message);
-    return '';
-  }
+  return smartFallbackAssignment(roleBucket,domain,skills);
 }
 
 async function writeAuditLog(entry){
   try{
     const dir = path.dirname(AUDIT_LOG_PATH);
-    if(!normalfs.existsSync(dir)){
-      normalfs.mkdirSync(dir,{recursive:true});
-    }
+    if(!normalfs.existsSync(dir)) normalfs.mkdirSync(dir,{recursive:true});
 
     let arr = [];
     if(normalfs.existsSync(AUDIT_LOG_PATH)){
@@ -375,76 +229,58 @@ async function writeAuditLog(entry){
     arr.push(entry);
     await fs.writeFile(AUDIT_LOG_PATH, JSON.stringify(arr,null,2));
   }catch(err){
-    console.log('Audit log failed =>', err.message);
+    console.log(err.message);
   }
 }
 
 async function generateAssignmentPDF(candidate){
-  const pdfPath = IS_VERCEL
-    ? `/tmp/assignment-${Date.now()}.pdf`
-    : path.join(__dirname, `assignment-${Date.now()}.pdf`);
+  const pdfPath = IS_VERCEL ? `/tmp/assignment-${Date.now()}.pdf` : path.join(__dirname,`assignment-${Date.now()}.pdf`);
 
   return new Promise((resolve)=>{
-    const doc = new PDFDocument({ margin:50 });
+    const doc = new PDFDocument({margin:50});
     const stream = normalfs.createWriteStream(pdfPath);
     doc.pipe(stream);
 
-    doc.fontSize(22).text('SensusSoft Technologies Pvt. Ltd.', { align:'center' });
-    doc.fontSize(15).text('Candidate Technical Evaluation Assignment Document', { align:'center' });
+    doc.fontSize(22).text('SensusSoft Technologies Pvt. Ltd.',{align:'center'});
+    doc.fontSize(14).text('Candidate Personalized Technical Evaluation Assignment',{align:'center'});
     doc.moveDown(2);
 
     doc.fontSize(12).text(`Candidate Name: ${candidate.fullName}`);
     doc.text(`Applied Role: ${candidate.appliedRole}`);
     doc.text(`HR Screening Score: ${candidate.hrScore}/100`);
-    doc.text(`Submission Deadline: ${candidate.assignment.timeline}`);
+    doc.text(`Deadline: ${candidate.assignment.timeline}`);
     doc.moveDown();
 
-    doc.fontSize(16).text(`1. Project Title`);
+    doc.fontSize(16).text('1. Assigned Project Title');
     doc.fontSize(12).text(candidate.assignment.projectTitle);
     doc.moveDown();
 
-    doc.fontSize(16).text(`2. Project Introduction`);
+    doc.fontSize(16).text('2. Project Introduction');
     doc.fontSize(12).text(candidate.assignment.projectIntroduction);
     doc.moveDown();
 
-    doc.fontSize(16).text(`3. Business Objective`);
+    doc.fontSize(16).text('3. Business Objective');
     doc.fontSize(12).text(candidate.assignment.businessObjective);
     doc.moveDown();
 
-    doc.fontSize(16).text(`4. Functional Module Breakdown`);
-    candidate.assignment.functionalModules.forEach((m,i)=>{
-      doc.fontSize(12).text(`${i+1}. ${m}`);
-    });
+    doc.fontSize(16).text('4. Functional Modules');
+    candidate.assignment.functionalModules.forEach((m,i)=>doc.fontSize(12).text(`${i+1}. ${m}`));
     doc.moveDown();
 
-    doc.fontSize(16).text(`5. Technical Development Requirements`);
-    candidate.assignment.technicalRequirements.forEach((m,i)=>{
-      doc.fontSize(12).text(`${i+1}. ${m}`);
-    });
-    doc.moveDown();
-
+    doc.fontSize(16).text('5. Technical Requirements');
+    candidate.assignment.technicalRequirements.forEach((m,i)=>doc.fontSize(12).text(`${i+1}. ${m}`));
     doc.addPage();
 
-    doc.fontSize(16).text(`6. Required Deliverables`);
-    candidate.assignment.deliverables.forEach((m,i)=>{
-      doc.fontSize(12).text(`${i+1}. ${m}`);
-    });
+    doc.fontSize(16).text('6. Deliverables');
+    candidate.assignment.deliverables.forEach((m,i)=>doc.fontSize(12).text(`${i+1}. ${m}`));
     doc.moveDown();
 
-    doc.fontSize(16).text(`7. Evaluation Criteria`);
-    candidate.assignment.evaluationCriteria.forEach((m,i)=>{
-      doc.fontSize(12).text(`${i+1}. ${m}`);
-    });
+    doc.fontSize(16).text('7. Evaluation Criteria');
+    candidate.assignment.evaluationCriteria.forEach((m,i)=>doc.fontSize(12).text(`${i+1}. ${m}`));
     doc.moveDown();
 
-    doc.fontSize(16).text(`8. Recommended Technology Stack`);
-    candidate.assignment.recommendedStack.forEach((m,i)=>{
-      doc.fontSize(12).text(`${i+1}. ${m}`);
-    });
-    doc.moveDown();
-
-    doc.fontSize(16).text(`9. Final HR Submission Notes`);
-    doc.fontSize(12).text('Candidate must submit complete source code, deployment link, documentation, and setup instructions. All deliverables will be reviewed by the technical panel based on architecture quality, implementation depth, professional coding standards, business understanding, and production readiness.');
+    doc.fontSize(16).text('8. Recommended Stack');
+    candidate.assignment.recommendedStack.forEach((m,i)=>doc.fontSize(12).text(`${i+1}. ${m}`));
     doc.moveDown(2);
 
     doc.text('Regards,');
@@ -458,7 +294,6 @@ async function generateAssignmentPDF(candidate){
 app.post('/api/career-apply', upload.single('resumeFile'), async (req,res)=>{
   try{
     const body = req.body || {};
-
     const fullName = String(body.fullName || '').trim();
     const email = String(body.email || '').trim();
     const appliedRole = String(body.appliedRole || '').trim();
@@ -466,74 +301,49 @@ app.post('/api/career-apply', upload.single('resumeFile'), async (req,res)=>{
     const skills = String(body.skills || '').split(',').map(s=>s.trim()).filter(Boolean);
 
     if(!fullName || !email || !appliedRole){
-      return res.status(400).json({ error:'Missing required fields.' });
+      return res.status(400).json({error:'Missing required fields'});
     }
 
-    const resumeText = req.file ? await extractResumeText(req.file.path) : '';
+    const resumeText = req.file ? await extractResumeText(req.file) : '';
+    const assignment = await generateAssignmentWithAI(appliedRole,resumeText,skills);
 
-    const aiAssignment = await generateAssignmentWithAI(appliedRole, resumeText, skills);
-
-    const processedCandidate = {
+    const candidate = {
       fullName,
       email,
       appliedRole,
       yearsExperience,
       skills,
-      hrScore: Math.min(98, 72 + (yearsExperience*4) + (skills.length*2)),
-      assignment: aiAssignment
+      hrScore: Math.min(98,72+(yearsExperience*4)+(skills.length*2)),
+      assignment
     };
 
-    const pdfFile = await generateAssignmentPDF(processedCandidate);
+    const pdfFile = await generateAssignmentPDF(candidate);
 
     await transporter.sendMail({
       from: SMTP_EMAIL,
       to: email,
       subject: 'SensusSoft Technical Evaluation Assignment',
-      text:`Dear ${fullName},
-
-Thank you for applying for ${appliedRole} at SensusSoft Technologies.
-
-Please find attached your personalized technical assignment document for the next evaluation round.
-
-Regards,
-SensusSoft HR Team`,
-      attachments:[
-        {
-          filename:`Technical_Assignment_${fullName}.pdf`,
-          path:pdfFile
-        }
-      ]
+      text:`Dear ${fullName}, Please find attached your personalized technical assignment.`,
+      attachments:[{ filename:`Technical_Assignment_${fullName}.pdf`, path:pdfFile }]
     });
 
     await writeAuditLog({
       submittedAt:new Date().toISOString(),
-      fullName,
-      email,
-      appliedRole,
-      yearsExperience,
-      skills,
-      assignmentTitle: aiAssignment.projectTitle
+      fullName,email,appliedRole,yearsExperience,skills
     });
 
-    return res.status(201).json({
-      success:true,
-      assignmentTitle: aiAssignment.projectTitle
-    });
+    return res.status(201).json({success:true, assignmentTitle:assignment.projectTitle});
 
   }catch(err){
-    console.error('SERVER ERROR =>', err);
-    return res.status(500).json({ error:'A server error occurred while processing candidate application.' });
+    console.error('SERVER ERROR =>',err);
+    return res.status(500).json({error:'A server error occurred while processing candidate application.'});
   }
 });
 
-app.get('/',(_,res)=>{
-  res.send('SensusSoft Enterprise AI Hiring Backend Running');
-});
+app.get('/',(_,res)=>res.send('SensusSoft Enterprise AI Hiring Backend Running'));
 
 module.exports = app;
 
 if(!process.env.VERCEL){
-  app.listen(PORT, ()=>{
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
+  app.listen(PORT,()=>console.log(`Server running on http://localhost:${PORT}`));
 }
