@@ -4,7 +4,6 @@ const nodemailer = require('nodemailer');
 const PDFDocument = require('pdfkit');
 const multer = require('multer');
 
-const { createRepo } = require('../github-demo/githubService');
 const normalfs = require('fs');
 const path = require('path');
 
@@ -69,11 +68,11 @@ async function generateAssignmentPDF(candidate) {
     doc.moveDown();
 
     doc.fontSize(16).text('1. Assignment Overview');
-    doc.fontSize(12).text(`You are required to complete the professional technical assignment titled "${candidate.assignment.title}". This practical evaluation is designed to measure your technical coding quality, architecture understanding, UI/UX thinking, backend logic capability, debugging approach, deployment knowledge and documentation discipline.`);
+    doc.fontSize(12).text(`You are required to complete the professional technical assignment titled "${candidate.assignment.title}". This evaluation measures coding quality, architecture, debugging, deployment knowledge and documentation discipline.`);
     doc.moveDown();
 
     doc.fontSize(16).text('2. Project Objective');
-    doc.fontSize(12).text(`The assignment must be developed according to real industry implementation standards and must clearly demonstrate your hands-on usage of these technologies: ${candidate.assignment.requirements.join(', ')}.`);
+    doc.fontSize(12).text(`The assignment must be developed according to industry implementation standards using the following technologies: ${candidate.assignment.requirements.join(', ')}.`);
     doc.moveDown();
 
     doc.fontSize(16).text('3. Functional Requirements');
@@ -83,15 +82,11 @@ async function generateAssignmentPDF(candidate) {
     doc.moveDown();
 
     doc.fontSize(16).text('4. Submission Guidelines');
-    doc.fontSize(12).text('• Push code regularly to assigned GitHub repository.\n• Maintain proper project structure.\n• Add README setup instructions.\n• Use comments where needed.\n• Final delivery must be within deadline.');
+    doc.fontSize(12).text('• Maintain proper project structure.\n• Add README setup instructions.\n• Use comments where needed.\n• Final delivery must be within deadline.\n• Share source code zip or GitHub link by email.');
     doc.moveDown();
 
     doc.fontSize(16).text('5. Evaluation Criteria');
-    doc.fontSize(12).text('Evaluation will be based on technical accuracy, clean coding practices, architecture, database/API logic, deployment understanding, documentation, and production readiness.');
-    doc.moveDown();
-
-    doc.fontSize(16).text('6. Assigned Private GitHub Repository');
-    doc.fontSize(12).text(`${candidate.githubRepoUrl || 'Repository will be shared shortly.'}`);
+    doc.fontSize(12).text('Evaluation will be based on technical accuracy, clean coding practices, architecture, API/database logic, deployment understanding, documentation, and production readiness.');
     doc.moveDown(2);
 
     doc.text('Regards,');
@@ -150,8 +145,8 @@ app.post('/api/career-apply', upload.single('resumeFile'), async (req, res) => {
       assignmentTitle = 'Enterprise Candidate Management Dashboard';
       assignmentRequirements = [
         'Build complete responsive React admin dashboard',
-        'Add login authentication and route protection',
-        'Create candidate table with search, filter, delete, edit',
+        'Add login authentication and protected routing',
+        'Create candidate table with search, filter, edit, delete',
         'Integrate public API and analytics cards',
         `Mandatory stack: ${profile.skills.join(', ')}`,
         'Deploy and document in README'
@@ -190,8 +185,8 @@ app.post('/api/career-apply', upload.single('resumeFile'), async (req, res) => {
         `Build a professional technical project relevant to ${profile.appliedRole}`,
         `Mandatory technologies: ${profile.skills.join(', ')}`,
         'Use production level folder structure',
-        'Push proper commits on repository',
-        'Deploy live and document project setup'
+        'Deploy live and document complete project setup',
+        'Share source code submission professionally'
       ];
     }
 
@@ -203,22 +198,9 @@ app.post('/api/career-apply', upload.single('resumeFile'), async (req, res) => {
       }
     };
 
-    let githubRepo = null;
-    try {
-      githubRepo = await createRepo({
-        fullName: profile.fullName,
-        role: profile.appliedRole,
-        assignmentTitle: assignmentResult.assignment.title,
-        assignmentRequirements: assignmentResult.assignment.requirements
-      });
-    } catch (err) {
-      console.error('GitHub repo create failed:', err.message);
-    }
-
     const processedCandidate = {
       ...profile,
       assignment: assignmentResult.assignment,
-      githubRepoUrl: githubRepo ? githubRepo.url : undefined,
       hrScore: assignmentResult.screening_score
     };
 
@@ -236,9 +218,6 @@ Your HR screening score: ${processedCandidate.hrScore}/100
 
 Please find attached your technical assignment PDF.
 
-Private GitHub Repository:
-${processedCandidate.githubRepoUrl || 'Will be shared shortly.'}
-
 Best regards,
 SensusSoft HR Team`,
       attachments: [
@@ -251,8 +230,7 @@ SensusSoft HR Team`,
 
     return res.status(201).json({
       success: true,
-      assignment: assignmentResult.assignment,
-      githubRepoUrl: githubRepo ? githubRepo.url : undefined
+      assignment: assignmentResult.assignment
     });
 
   } catch (err) {
