@@ -128,35 +128,103 @@ if (matchedSkills.length === 0) {
   let assignmentRequirements = [];
 
   if (profile.appliedRole.toLowerCase().includes('react')) {
-    assignmentTitle = 'Build a Candidate Management Dashboard';
-    assignmentRequirements = [
-      'Build a responsive React dashboard with login authentication',
-      'Create candidate listing table with search and filter',
-      'Integrate one public API and display fetched data',
-      `Must use: ${profile.skills.join(', ')}`,
-      'Push clean modular code with multiple commits',
-      'Deploy locally and document setup in README',
-      'Complete submission within 3 days'
-    ];
-  } else if (profile.appliedRole.toLowerCase().includes('node')) {
-    assignmentTitle = 'Build a REST API Recruitment Backend';
-    assignmentRequirements = [
-      'Create Node.js + Express REST APIs for candidate management',
-      'Implement CRUD operations with validation',
-      'Connect MongoDB or JSON datastore',
-      `Must use: ${profile.skills.join(', ')}`,
-      'Write modular backend architecture',
-      'Provide Postman collection and README',
-      'Complete submission within 3 days'
-    ];
-  } else {
-    assignmentRequirements = [
-      `Build a mini project relevant to ${profile.appliedRole}`,
-      `Must use these skills: ${profile.skills.join(', ')}`,
-      'Code should be pushed regularly with commits',
-      'Complete and submit within 3 days'
-    ];
-  }
+  assignmentTitle = 'Build a Candidate Management Dashboard';
+  assignmentRequirements = [
+    'Build a responsive React dashboard with login authentication',
+    'Create candidate listing table with search and advanced filter',
+    'Integrate one public REST API and display fetched data',
+    `Mandatory stack: ${profile.skills.join(', ')}`,
+    'Use reusable components and proper folder structure',
+    'Push clean modular code with multiple commits',
+    'Complete submission within 3 days'
+  ];
+
+} else if (profile.appliedRole.toLowerCase().includes('node')) {
+  assignmentTitle = 'Build a REST API Recruitment Backend';
+  assignmentRequirements = [
+    'Create Node.js + Express REST APIs for recruitment workflow',
+    'Implement CRUD operations with validation middleware',
+    'Connect MongoDB or JSON datastore',
+    `Mandatory stack: ${profile.skills.join(', ')}`,
+    'Prepare Postman collection and API documentation',
+    'Write modular backend architecture',
+    'Complete submission within 3 days'
+  ];
+
+} else if (profile.appliedRole.toLowerCase().includes('full stack')) {
+  assignmentTitle = 'Build an End-to-End Hiring Portal';
+  assignmentRequirements = [
+    'Create frontend candidate application form and backend APIs',
+    'Implement full submission to database flow',
+    `Mandatory stack: ${profile.skills.join(', ')}`,
+    'Add login/admin listing page',
+    'Deploy locally with proper README instructions',
+    'Complete submission within 4 days'
+  ];
+
+} else if (profile.appliedRole.toLowerCase().includes('python')) {
+  assignmentTitle = 'Build a Python Data Processing Utility';
+  assignmentRequirements = [
+    'Create Python script or Flask app for candidate data processing',
+    'Perform CSV/JSON parsing and summary generation',
+    `Mandatory stack: ${profile.skills.join(', ')}`,
+    'Write clean documented functions',
+    'Generate output report automatically',
+    'Complete submission within 3 days'
+  ];
+
+} else if (profile.appliedRole.toLowerCase().includes('ui/ux')) {
+  assignmentTitle = 'Design a Recruitment Dashboard UI/UX Case Study';
+  assignmentRequirements = [
+    'Design modern recruitment dashboard screens in Figma',
+    'Include candidate list, analytics, and detail page',
+    `Mandatory tools/skills: ${profile.skills.join(', ')}`,
+    'Provide design system, typography and color usage',
+    'Share Figma link and export screens',
+    'Complete submission within 3 days'
+  ];
+
+} else if (profile.appliedRole.toLowerCase().includes('qa')) {
+  assignmentTitle = 'Prepare Software Testing Case Documentation';
+  assignmentRequirements = [
+    'Create manual test cases for a hiring application workflow',
+    'Prepare bug report sheet and edge case analysis',
+    `Mandatory skills: ${profile.skills.join(', ')}`,
+    'Include API/basic functional testing approach',
+    'Submit proper QA documentation',
+    'Complete submission within 2 days'
+  ];
+
+} else if (profile.appliedRole.toLowerCase().includes('devops')) {
+  assignmentTitle = 'Prepare CI/CD Deployment Pipeline Demo';
+  assignmentRequirements = [
+    'Create deployment-ready Node application pipeline',
+    'Add Dockerfile and basic CI/CD workflow',
+    `Mandatory stack: ${profile.skills.join(', ')}`,
+    'Document environment variable setup',
+    'Provide deployment explanation',
+    'Complete submission within 3 days'
+  ];
+
+} else if (profile.appliedRole.toLowerCase().includes('data analyst')) {
+  assignmentTitle = 'Build Candidate Recruitment Analytics Report';
+  assignmentRequirements = [
+    'Analyze sample hiring dataset',
+    'Generate charts and summary insights',
+    `Mandatory tools: ${profile.skills.join(', ')}`,
+    'Prepare Excel/Python/BI report',
+    'Share findings in readable format',
+    'Complete submission within 2 days'
+  ];
+
+} else {
+  assignmentRequirements = [
+    `Build a mini technical project relevant to ${profile.appliedRole}`,
+    `Mandatory skills: ${profile.skills.join(', ')}`,
+    'Push code regularly with proper commits',
+    'Complete submission within 3 days'
+  ];
+}
 
   const assignmentResult = {
     screening_score: Math.min(96, 68 + profile.yearsExperience * 7 + profile.skills.length * 4),
