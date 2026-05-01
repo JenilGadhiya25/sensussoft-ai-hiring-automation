@@ -1,10 +1,38 @@
 require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 const express = require('express');
-
 const nodemailer = require('nodemailer');
 const PDFDocument = require('pdfkit');
+const { createRepo } = require('../github-demo/githubService');
+const fs = require('fs').promises;
+const path = require('path');
+
+const app = express();
+const PORT = process.env.PORT || 4000;
+const AUDIT_LOG_PATH = process.env.AUDIT_LOG_PATH || path.join(__dirname, '../audit-logs/candidate-log.json');
+const IS_VERCEL = !!process.env.VERCEL;
+
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.SMTP_EMAIL,
+    pass: process.env.SMTP_PASS
+  }
+});
+
+app.use(express.json());
+
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') return res.sendStatus(200);
+  next();
+});
+
 async function generateAssignmentPDF(candidate) {
-  const pdfPath = path.join(__dirname, `assignment-${candidate.id}.pdf`);
+  const pdfPath = IS_VERCEL
+    ? `/tmp/assignment-${candidate.id}.pdf`
+    : path.join(__dirname, `assignment-${candidate.id}.pdf`);
 
   return new Promise((resolve) => {
     const doc = new PDFDocument({ margin: 50 });
@@ -31,44 +59,18 @@ async function generateAssignmentPDF(candidate) {
     doc.moveDown();
     doc.text(`Private GitHub Repository: ${candidate.githubRepoUrl}`);
     doc.moveDown();
-    doc.text('Please complete the above assignment and push all code changes to the provided private GitHub repository.');
-    doc.text('Our HR and technical team will review your commits and final implementation.');
+    doc.text('Please complete the assignment and push all code changes to the provided private GitHub repository.');
+    doc.text('Our HR and technical team will review your implementation.');
 
     doc.end();
-
     stream.on('finish', () => resolve(pdfPath));
   });
 }
-const { createRepo } = require('../github-demo/githubService');
-const fs = require('fs').promises;
-const path = require('path');
-
-const app = express();
-const PORT = process.env.PORT || 4000;
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.SMTP_EMAIL,
-    pass: process.env.SMTP_PASS
-  }
-});
-const AUDIT_LOG_PATH = process.env.AUDIT_LOG_PATH || path.join(__dirname, '..', 'audit-logs', 'candidate-log.json');
-const OPENCLAW_URL = process.env.OPENCLAW_URL || 'http://127.0.0.1:18789/v1/event';
-
-app.use(express.json());
-
-// Simple CORS to allow local testing from file:// or local servers
-app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  if (req.method === 'OPTIONS') return res.sendStatus(200);
-  next();
-});
 
 app.post('/api/career-apply', async (req, res) => {
   const body = req.body || {};
   const required = ['fullName', 'email', 'appliedRole', 'yearsExperience', 'skills'];
+
   for (const field of required) {
     const value = body[field];
     if (value === undefined || value === null || (Array.isArray(value) ? value.length === 0 : String(value).trim() === '')) {
@@ -76,7 +78,6 @@ app.post('/api/career-apply', async (req, res) => {
     }
   }
 
-  // Normalize skills to array
   let skills = body.skills;
   if (!Array.isArray(skills)) {
     skills = String(skills).split(',').map(s => s.trim()).filter(Boolean);
@@ -93,157 +94,153 @@ app.post('/api/career-apply', async (req, res) => {
     receivedAt: new Date().toISOString()
   };
 
-  // Save raw request in audit log
-  try {
-    await fs.mkdir(path.dirname(AUDIT_LOG_PATH), { recursive: true });
-    let arr = [];
+  if (!IS_VERCEL) {
     try {
-      const content = await fs.readFile(AUDIT_LOG_PATH, 'utf8');
-      arr = JSON.parse(content || '[]');
-    } catch (e) {
-      arr = [];
-    }
-    arr.push({ timestamp: new Date().toISOString(), raw: body });
-    await fs.writeFile(AUDIT_LOG_PATH, JSON.stringify(arr, null, 2), 'utf8');
-  } catch (err) {
-    console.error('Failed to write audit log:', err);
-  }
-let assignmentTitle = `Technical Engineering Assignment for ${profile.appliedRole}`;
-let assignmentRequirements = [];
-
-if (profile.appliedRole.toLowerCase().includes('react')) {
-  assignmentTitle = 'Build a Candidate Management Dashboard';
-  assignmentRequirements = [
-    'Build a responsive React dashboard with login authentication',
-    'Create candidate listing table with search and filter',
-    'Integrate one public API and display fetched data',
-    `Must use: ${profile.skills.join(', ')}`,
-    'Push clean modular code with multiple commits',
-    'Deploy locally and document setup in README',
-    'Complete submission within 3 days'
-  ];
-} else if (profile.appliedRole.toLowerCase().includes('node')) {
-  assignmentTitle = 'Build a REST API Recruitment Backend';
-  assignmentRequirements = [
-    'Create Node.js + Express REST APIs for candidate management',
-    'Implement CRUD operations with validation',
-    'Connect MongoDB or JSON datastore',
-    `Must use: ${profile.skills.join(', ')}`,
-    'Write modular backend architecture',
-    'Provide Postman collection and README',
-    'Complete submission within 3 days'
-  ];
-} else {
-  assignmentRequirements = [
-    `Build a mini project relevant to ${profile.appliedRole}`,
-    `Must use these skills: ${profile.skills.join(', ')}`,
-    'Code should be pushed regularly with commits',
-    'Complete and submit within 3 days'
-  ];
-}
-
-let assignmentResult = {
-  screening_score: Math.min(96, 68 + profile.yearsExperience * 7 + profile.skills.length * 4),
-  assignment: {
-    title: assignmentTitle,
-    requirements: assignmentRequirements
-  }
-};
-
-  // If assignmentResult is present, call githubService
-  let githubRepo = null;
-  if (assignmentResult && assignmentResult.assignment && assignmentResult.assignment.title && assignmentResult.assignment.requirements) {
-    try {
-      githubRepo = await createRepo({
-        fullName: profile.fullName,
-        role: profile.appliedRole,
-        assignmentTitle: assignmentResult.assignment.title,
-        assignmentRequirements: assignmentResult.assignment.requirements
-      });
+      await fs.mkdir(path.dirname(AUDIT_LOG_PATH), { recursive: true });
+      let arr = [];
+      try {
+        const content = await fs.readFile(AUDIT_LOG_PATH, 'utf8');
+        arr = JSON.parse(content || '[]');
+      } catch {
+        arr = [];
+      }
+      arr.push({ timestamp: new Date().toISOString(), raw: body });
+      await fs.writeFile(AUDIT_LOG_PATH, JSON.stringify(arr, null, 2), 'utf8');
     } catch (err) {
-      console.error('Failed to create GitHub repo:', err && err.message ? err.message : err);
+      console.error('Failed raw audit log:', err.message);
     }
   }
 
-  // Compose final processed candidate object
+  let assignmentTitle = `Technical Engineering Assignment for ${profile.appliedRole}`;
+  let assignmentRequirements = [];
+
+  if (profile.appliedRole.toLowerCase().includes('react')) {
+    assignmentTitle = 'Build a Candidate Management Dashboard';
+    assignmentRequirements = [
+      'Build a responsive React dashboard with login authentication',
+      'Create candidate listing table with search and filter',
+      'Integrate one public API and display fetched data',
+      `Must use: ${profile.skills.join(', ')}`,
+      'Push clean modular code with multiple commits',
+      'Deploy locally and document setup in README',
+      'Complete submission within 3 days'
+    ];
+  } else if (profile.appliedRole.toLowerCase().includes('node')) {
+    assignmentTitle = 'Build a REST API Recruitment Backend';
+    assignmentRequirements = [
+      'Create Node.js + Express REST APIs for candidate management',
+      'Implement CRUD operations with validation',
+      'Connect MongoDB or JSON datastore',
+      `Must use: ${profile.skills.join(', ')}`,
+      'Write modular backend architecture',
+      'Provide Postman collection and README',
+      'Complete submission within 3 days'
+    ];
+  } else {
+    assignmentRequirements = [
+      `Build a mini project relevant to ${profile.appliedRole}`,
+      `Must use these skills: ${profile.skills.join(', ')}`,
+      'Code should be pushed regularly with commits',
+      'Complete and submit within 3 days'
+    ];
+  }
+
+  const assignmentResult = {
+    screening_score: Math.min(96, 68 + profile.yearsExperience * 7 + profile.skills.length * 4),
+    assignment: {
+      title: assignmentTitle,
+      requirements: assignmentRequirements
+    }
+  };
+
+  let githubRepo = null;
+  try {
+    githubRepo = await createRepo({
+      fullName: profile.fullName,
+      role: profile.appliedRole,
+      assignmentTitle: assignmentResult.assignment.title,
+      assignmentRequirements: assignmentResult.assignment.requirements
+    });
+  } catch (err) {
+    console.error('GitHub repo create failed:', err.message);
+  }
+
   const processedCandidate = {
     ...profile,
-    assignment: assignmentResult ? assignmentResult.assignment : undefined,
+    assignment: assignmentResult.assignment,
     githubRepoUrl: githubRepo ? githubRepo.url : undefined,
-    hrScore: assignmentResult && assignmentResult.screening_score ? assignmentResult.screening_score : undefined,
+    hrScore: assignmentResult.screening_score,
     processedAt: new Date().toISOString()
   };
 
-  // Print professional candidate email in terminal
- if (processedCandidate.assignment && processedCandidate.githubRepoUrl) {
-  const emailText = `
+  if (processedCandidate.assignment && processedCandidate.githubRepoUrl) {
+    const emailText = `
 Dear ${processedCandidate.fullName},
 
-Thank you for applying for the role of ${processedCandidate.appliedRole} at our company.
+Thank you for applying for the role of ${processedCandidate.appliedRole} at SensusSoft.
 
-Your HR screening score: ${processedCandidate.hrScore || 'N/A'} / 100
+Your HR screening score: ${processedCandidate.hrScore} / 100
 
-We are excited to invite you to complete the following technical assignment:
+Please find attached your technical assignment PDF.
 
-Assignment: ${processedCandidate.assignment.title}
-
-Requirements:
-${processedCandidate.assignment.requirements.map(r => '- ' + r).join('\n')}
-
-You can find your private GitHub repository here:
+Private GitHub Repository:
 ${processedCandidate.githubRepoUrl}
 
-Please submit your solution within 3 days.
+Please complete submission within 3 days.
 
 Best regards,
-HR Team
+SensusSoft HR Team
 `;
 
-  try {
-    const pdfFile = await generateAssignmentPDF(processedCandidate);
-   await transporter.sendMail({
-  from: process.env.SMTP_EMAIL,
-  to: processedCandidate.email,
-  subject: 'SensusSoft Technical Assignment — Next Steps',
-  text: emailText,
-  attachments: [
-    {
-      filename: `Technical_Assignment_${processedCandidate.fullName.replace(/\s+/g, '_')}.pdf`,
-      path: pdfFile
-    }
-  ]
-});
-    console.log('Real email sent successfully to', processedCandidate.email);
-  } catch (err) {
-    console.error('Email send failed:', err.message);
-  }
-}
-
-  // Save final processed candidate object in audit log
-  try {
-    
-    await fs.mkdir(path.dirname(AUDIT_LOG_PATH), { recursive: true });
-    let arr = [];
     try {
-      const content = await fs.readFile(AUDIT_LOG_PATH, 'utf8');
-      arr = JSON.parse(content || '[]');
-    } catch (e) {
-      arr = [];
+      const pdfFile = await generateAssignmentPDF(processedCandidate);
+
+      await transporter.sendMail({
+        from: process.env.SMTP_EMAIL,
+        to: processedCandidate.email,
+        subject: 'SensusSoft Technical Assignment — Next Steps',
+        text: emailText,
+        attachments: [
+          {
+            filename: `Technical_Assignment_${processedCandidate.fullName.replace(/\s+/g, '_')}.pdf`,
+            path: pdfFile
+          }
+        ]
+      });
+
+      console.log('Real email sent successfully to', processedCandidate.email);
+    } catch (err) {
+      console.error('Email send failed:', err.message);
     }
-    arr.push({ timestamp: new Date().toISOString(), processed: processedCandidate });
-    await fs.writeFile(AUDIT_LOG_PATH, JSON.stringify(arr, null, 2), 'utf8');
-  } catch (err) {
-    console.error('Failed to write processed candidate to audit log:', err);
+  }
+
+  if (!IS_VERCEL) {
+    try {
+      await fs.mkdir(path.dirname(AUDIT_LOG_PATH), { recursive: true });
+      let arr = [];
+      try {
+        const content = await fs.readFile(AUDIT_LOG_PATH, 'utf8');
+        arr = JSON.parse(content || '[]');
+      } catch {
+        arr = [];
+      }
+      arr.push({ timestamp: new Date().toISOString(), processed: processedCandidate });
+      await fs.writeFile(AUDIT_LOG_PATH, JSON.stringify(arr, null, 2), 'utf8');
+    } catch (err) {
+      console.error('Failed processed audit log:', err.message);
+    }
   }
 
   return res.status(201).json({
     success: true,
     profile,
-    assignment: assignmentResult ? assignmentResult.assignment : undefined,
+    assignment: assignmentResult.assignment,
     githubRepoUrl: githubRepo ? githubRepo.url : undefined
   });
 });
 
-app.get('/', (_, res) => res.send('Webhook server running'));
+app.get('/', (_, res) => {
+  res.send('SensusSoft AI Hiring Automation Backend Running');
+});
 
 module.exports = app;
