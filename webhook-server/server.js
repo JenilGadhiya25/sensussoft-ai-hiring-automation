@@ -54,46 +54,65 @@ app.use((req, res, next) => {
 
 async function generateAssignmentFromAI(profile, resumeHint = '') {
   try {
+    const uniqueSeed = Date.now();
+
     const prompt = `
-Generate a PROFESSIONAL software company technical assignment document for a candidate.
+You are a Senior HR Technical Evaluator at a top software company.
 
-Candidate Role: ${profile.appliedRole}
-Candidate Skills: ${profile.skills.join(', ')}
-Candidate Experience: ${profile.yearsExperience} years
-Resume Hint: ${resumeHint}
+Generate a COMPLETELY DIFFERENT and UNIQUE technical assignment documentation for this candidate.
 
-Return ONLY valid JSON in this exact format:
+Candidate Name: ${profile.fullName}
+Applied Role: ${profile.appliedRole}
+Technical Skills: ${profile.skills.join(', ')}
+Experience: ${profile.yearsExperience} years
+Resume File Hint: ${resumeHint}
+Unique Variation Seed: ${uniqueSeed}
+
+STRICT RULES:
+- Every response must have a DIFFERENT software product/project idea.
+- Do not generate generic admin panel tasks repeatedly.
+- Make assignment highly role specific.
+- Use practical company-level project names.
+- UI/UX roles should get product design tasks.
+- Frontend roles should get dashboard/app UI tasks.
+- Backend roles should get API/server tasks.
+- Full stack roles should get complete software platform tasks.
+- Python roles should get automation/data processing tasks.
+- Add realistic modules/features/workflow.
+
+Return ONLY pure valid JSON:
 {
 "title":"",
 "objective":"",
-"modules":["","",""],
-"features":["","","","",""],
-"workflow":["","","",""],
-"stack":["","",""]
+"modules":["","","",""],
+"features":["","","","","",""],
+"workflow":["","","","",""],
+"stack":["","","",""]
 }
-
-Make it unique, detailed, and realistic according to candidate profile.
 `;
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [{ role: 'user', content: prompt }],
-      temperature: 0.9
+      temperature: 1.25
     });
 
     const txt = completion.choices[0].message.content.trim();
     const clean = txt.replace(/```json/g, '').replace(/```/g, '').trim();
+
+    console.log('OPENAI RAW RESPONSE => ', clean);
+
     return JSON.parse(clean);
 
   } catch (err) {
     console.error('OpenAI generation failed:', err.message);
 
     return {
-      title: `Technical Engineering Assignment for ${profile.appliedRole}`,
-      objective: 'Build a professional scalable technical software solution according to industry standards.',
-      modules: ['Admin Module', 'User Module', 'Backend APIs', 'Reports'],
-      features: ['Authentication', 'CRUD management', 'API integration', 'Reporting', 'Deployment'],
-      workflow: ['INPUT', 'PROCESS', 'MANAGE', 'REPORT'],
+      title: `Custom Technical Product Build for ${profile.appliedRole}`,
+      objective: `Build a unique practical software engineering solution relevant to ${profile.appliedRole} using advanced real-world implementation standards.`,
+      modules: ['Admin Control Center', 'Workflow Engine', 'User Interaction Module', 'Analytics Reports'],
+      features: ['Authentication', 'Advanced CRUD', 'Status Tracking', 'API Integration', 'Reporting', 'Deployment'],
+      workflow: ['INITIATE', 'PROCESS', 'MANAGE', 'TRACK', 'DELIVER'],
       stack: profile.skills
     };
   }
@@ -120,19 +139,19 @@ async function generateAssignmentPDF(candidate) {
     doc.text(`Submission Deadline: Within 3 Working Days`);
     doc.moveDown();
 
-    doc.fontSize(14).text('1. Objective');
+    doc.fontSize(14).text('1. Project Objective');
     doc.fontSize(12).text(candidate.assignment.objective);
     doc.moveDown();
 
-    doc.fontSize(14).text('2. Suggested Modules');
+    doc.fontSize(14).text('2. Suggested Development Modules');
     candidate.assignment.modules.forEach(m => doc.text('• ' + m));
     doc.moveDown();
 
-    doc.fontSize(14).text('3. Core Features');
+    doc.fontSize(14).text('3. Core Functional Features');
     candidate.assignment.features.forEach(f => doc.text('• ' + f));
     doc.moveDown();
 
-    doc.fontSize(14).text('4. Workflow / System Flow');
+    doc.fontSize(14).text('4. System Workflow');
     doc.fontSize(12).text(candidate.assignment.workflow.join(' → '));
     doc.moveDown();
 
@@ -141,10 +160,10 @@ async function generateAssignmentPDF(candidate) {
     doc.moveDown();
 
     doc.fontSize(14).text('6. Non Functional Requirements');
-    doc.fontSize(12).text('• Fast performance\n• Secure APIs\n• Clean UI\n• Scalable architecture\n• Production ready code');
+    doc.fontSize(12).text('• High performance\n• Secure implementation\n• Clean UI/UX\n• Scalable architecture\n• Production ready coding standards');
     doc.moveDown();
 
-    doc.fontSize(14).text('7. Technology Stack');
+    doc.fontSize(14).text('7. Mandatory Technology Stack');
     candidate.assignment.stack.forEach(t => doc.text('• ' + t));
     doc.moveDown(2);
 
