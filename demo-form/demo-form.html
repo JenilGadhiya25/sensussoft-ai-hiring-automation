@@ -45,7 +45,7 @@
       <input id="resumeUrl" name="resumeUrl" type="text" placeholder="https://..." />
 
       <button type="submit">Submit Application</button>
-      <div class="note">This form POSTs JSON to <strong>http://localhost:4000/api/career-apply</strong></div>
+      <div class="note">This form POSTs JSON to <strong>https://sensussoft-ai-hiring-automation.vercel.app/api/career-apply</strong></div>
     </form>
     <div id="result" class="result" style="display:none"></div>
   </div>
@@ -77,7 +77,7 @@
       }
 
       try{
-        const resp = await fetch('http://localhost:4000/api/career-apply', {
+        const resp = await fetch('https://sensussoft-ai-hiring-automation.vercel.app/api/career-apply', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data)
