@@ -10,7 +10,12 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 const AUDIT_LOG_PATH = process.env.AUDIT_LOG_PATH || path.join(__dirname, '../audit-logs/candidate-log.json');
 const IS_VERCEL = !!process.env.VERCEL;
-
+const ALLOWED_IT_SKILLS = [
+  'react','next.js','node','node.js','javascript','typescript','html','css',
+  'mongodb','mysql','sql','firebase','python','django','flask',
+  'figma','ui','ux','testing','qa','devops','docker','aws',
+  'git','github','api','express','java','php','laravel','angular'
+];
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -81,7 +86,15 @@ app.post('/api/career-apply', async (req, res) => {
   let skills = body.skills;
   if (!Array.isArray(skills)) {
     skills = String(skills).split(',').map(s => s.trim()).filter(Boolean);
-  }
+  const matchedSkills = skills.filter(skill =>
+  ALLOWED_IT_SKILLS.includes(String(skill).toLowerCase())
+);
+
+if (matchedSkills.length === 0) {
+  return res.status(400).json({
+    error: 'Currently we are accepting applications only for IT and Software related roles and skills.'
+  });
+}}
 
   const profile = {
     id: Date.now().toString(),
