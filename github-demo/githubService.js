@@ -6,29 +6,32 @@ const GITHUB_USER = process.env.GITHUB_USER || null;
 
 async function createRepo({ fullName, role, assignmentTitle, assignmentRequirements }) {
   if (!GITHUB_TOKEN) {
-    return {
-      url: `https://github.com/mock/${slugify(fullName)}-${slugify(role)}-demo-task`,
-      mock: true
-    };
+    throw new Error('Missing GITHUB_TOKEN in environment');
   }
 
   let username = GITHUB_USER;
 
-  if (!username) {
-    const userResp = await fetch(`${GITHUB_API}/user`, {
-      headers: {
-        Authorization: `Bearer ${GITHUB_TOKEN}`,
-        Accept: 'application/vnd.github+json'
-      }
-    });
+  // STEP 1 USER VERIFY
+  const verifyResp = await fetch(`${GITHUB_API}/user`, {
+    headers: {
+      Authorization: `Bearer ${GITHUB_TOKEN}`,
+      Accept: 'application/vnd.github+json'
+    }
+  });
 
-    const userData = await userResp.json();
-    username = userData.login;
+  const verifyData = await verifyResp.json();
+  console.log('GITHUB VERIFY USER =>', verifyData);
+
+  if (!verifyResp.ok) {
+    throw new Error('GitHub token invalid: ' + (verifyData.message || JSON.stringify(verifyData)));
   }
+
+  if (!username) username = verifyData.login;
 
   const repoName = `${slugify(fullName)}-${slugify(role)}-${Date.now()}-demo-task`;
 
-  const repoResp = await fetch(`${GITHUB_API}/user/repos`, {
+  // STEP 2 CREATE PRIVATE REPO
+  let repoResp = await fetch(`${GITHUB_API}/user/repos`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${GITHUB_TOKEN}`,
@@ -43,17 +46,39 @@ async function createRepo({ fullName, role, assignmentTitle, assignmentRequireme
     })
   });
 
-  const repoData = await repoResp.json();
+  let repoData = await repoResp.json();
+  console.log('GITHUB CREATE PRIVATE =>', repoData);
+
+  // fallback public if private blocked
+  if (!repoResp.ok) {
+    repoResp = await fetch(`${GITHUB_API}/user/repos`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${GITHUB_TOKEN}`,
+        'Content-Type': 'application/json',
+        Accept: 'application/vnd.github+json'
+      },
+      body: JSON.stringify({
+        name: repoName,
+        private: false,
+        auto_init: true,
+        description: `Technical assignment repository for ${fullName} (${role})`
+      })
+    });
+
+    repoData = await repoResp.json();
+    console.log('GITHUB CREATE PUBLIC FALLBACK =>', repoData);
+  }
 
   if (!repoResp.ok) {
     throw new Error('GitHub repo create failed: ' + (repoData.message || JSON.stringify(repoData)));
   }
 
-  await delay(2000);
+  await delay(3000);
 
   const readmeContent = `# Welcome ${fullName}
 
-This private repository has been assigned by SensusSoft Technologies for your technical evaluation.
+This repository has been assigned by SensusSoft Technologies for your technical evaluation.
 
 ## Applied Role
 ${role}
@@ -61,10 +86,10 @@ ${role}
 ## Important Instructions
 - Push your complete source code in this repository
 - Maintain clean commit history
-- Add setup steps in README
+- Add setup instructions in README
 - Submit within 3 working days
 
-Best Regards,
+Regards,
 SensusSoft HR Team`;
 
   const taskContent = `# ${assignmentTitle}
@@ -79,24 +104,21 @@ ${assignmentRequirements.map(r => `- ${r}`).join('\n')}
 - Add README documentation
 - Final submission deadline: 3 working days`;
 
-  await createFile({
-    owner: username,
-    repo: repoName,
-    path: 'README.md',
-    content: readmeContent
-  });
-
-  await createFile({
-    owner: username,
-    repo: repoName,
-    path: 'TASK.md',
-    content: taskContent
-  });
+  await safeCreateFile(username, repoName, 'README.md', readmeContent);
+  await safeCreateFile(username, repoName, 'TASK.md', taskContent);
 
   return {
     url: repoData.html_url,
     mock: false
   };
+}
+
+async function safeCreateFile(owner, repo, filePath, content){
+  try{
+    await createFile({ owner, repo, path:filePath, content });
+  }catch(err){
+    console.log(`FAILED TO CREATE ${filePath} =>`, err.message);
+  }
 }
 
 async function createFile({ owner, repo, path, content }) {
@@ -114,6 +136,7 @@ async function createFile({ owner, repo, path, content }) {
   });
 
   const data = await resp.json();
+  console.log(`GITHUB FILE ${path} =>`, data);
 
   if (!resp.ok) {
     throw new Error(`Failed to create ${path}: ` + (data.message || JSON.stringify(data)));
