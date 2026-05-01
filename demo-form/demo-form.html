@@ -1,108 +1,120 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Local AI Hiring — Candidate Form</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SensusSoft Career Application</title>
   <style>
-    body{font-family:Inter,system-ui,Segoe UI,Arial;background:#f6f8fa;color:#0b1220;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}
-    .card{background:#fff;padding:28px;border-radius:10px;box-shadow:0 6px 18px rgba(11,18,32,0.08);width:520px;max-width:95%}
-    h1{margin:0 0 16px;font-size:20px}
-    label{display:block;font-size:13px;margin-top:12px}
-    input[type=text],input[type=email],input[type=number],select,textarea{width:100%;padding:10px;border:1px solid #e3e8ee;border-radius:6px;margin-top:6px;font-size:14px}
-    .row{display:flex;gap:12px}
-    .row > *{flex:1}
-    button{margin-top:18px;padding:10px 14px;background:#0b6efd;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer}
-    .note{font-size:12px;color:#6b7280;margin-top:8px}
-    .result{margin-top:12px;padding:10px;border-radius:6px;background:#f1f5f9;color:#0b1220}
+    body{font-family:Arial,sans-serif;max-width:700px;margin:40px auto;padding:20px;background:#f5f7fb}
+    form{background:#fff;padding:25px;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+    h2{text-align:center}
+    label{display:block;margin-top:15px;font-weight:bold}
+    input,select,textarea,button{width:100%;padding:10px;margin-top:6px;border:1px solid #ccc;border-radius:8px;box-sizing:border-box}
+    button{background:#2563eb;color:#fff;border:none;cursor:pointer;font-size:16px}
+    button:hover{background:#1d4ed8}
+    .note{margin-top:15px;font-size:13px;color:#666}
+    .result{margin-top:15px;padding:12px;border-radius:8px;display:none}
+    .success{background:#dcfce7;color:#166534}
+    .error{background:#fee2e2;color:#991b1b}
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>Candidate Application</h1>
-    <form id="candidateForm">
-      <label for="fullName">Full name *</label>
-      <input id="fullName" name="fullName" type="text" required />
 
-      <label for="email">Email *</label>
-      <input id="email" name="email" type="email" required />
+<form id="careerForm">
+  <h2>SensusSoft Career Application Form</h2>
+const ALLOWED_IT_ROLES = [
+  'react developer',
+  'frontend developer',
+  'node developer',
+  'node.js developer',
+  'full stack developer',
+  'python developer',
+  'software engineer',
+  'web developer',
+  'ui/ux designer',
+  'qa engineer',
+  'devops engineer',
+  'data analyst',
+  'backend developer',
+  'javascript developer'
+];
+  <label for="fullName">Full Name *</label>
+  <input id="fullName" type="text" required />
 
-      <label for="appliedRole">Applied role *</label>
-     <select id="appliedRole" name="appliedRole" required>
-  <option value="">Select IT Role</option>
-  <option>React Developer</option>
-  <option>Node.js Developer</option>
-  <option>Full Stack Developer</option>
-  <option>Python Developer</option>
-  <option>UI/UX Designer</option>
-  <option>QA Engineer</option>
-  <option>DevOps Engineer</option>
-  <option>Data Analyst</option>
-</select>
+  <label for="email">Email *</label>
+  <input id="email" type="email" required />
 
-      <div class="row">
-        <div>
-          <label for="yearsExperience">Years of experience *</label>
-          <input id="yearsExperience" name="yearsExperience" type="number" min="0" step="0.1" required />
-        </div>
-        <div>
-          <label for="skills">Skills * (comma separated)</label>
-          <input id="skills" name="skills" type="text" placeholder="e.g. Node.js, React, SQL" required />
-        </div>
-      </div>
+  <label for="appliedRole">Applied Role *</label>
+<input id="appliedRole" type="text" placeholder="Enter Applied IT Role" required />
 
-      <label for="resumeUrl">Resume URL (optional)</label>
-      <input id="resumeUrl" name="resumeUrl" type="text" placeholder="https://..." />
+  <label for="yearsExperience">Years of Experience *</label>
+  <input id="yearsExperience" type="number" min="0" step="0.1" required />
 
-      <button type="submit">Submit Application</button>
-      <div class="note">This form POSTs JSON to <strong>https://sensussoft-ai-hiring-automation.vercel.app/api/career-apply</strong></div>
-    </form>
-    <div id="result" class="result" style="display:none"></div>
-  </div>
+  <label for="skills">Known Skills (comma separated) *</label>
+  <input id="skills" type="text" placeholder="React, Next.js, Firebase" required />
 
-  <script>
-    const form = document.getElementById('candidateForm');
-    const resultEl = document.getElementById('result');
+  <label for="resumeFile">Upload Resume PDF *</label>
+  <input id="resumeFile" type="file" accept=".pdf" required />
 
-    function showResult(msg, ok=true){
-      resultEl.style.display = 'block';
-      resultEl.style.background = ok ? '#ecfdf5' : '#fff1f2';
-      resultEl.textContent = msg;
-    }
+  <button type="submit">Submit Application</button>
+  <div class="note">Powered by SensusSoft AI Hiring Automation</div>
+  <div id="result" class="result"></div>
+</form>
 
-    form.addEventListener('submit', async (e)=>{
-      e.preventDefault();
-      const data = {
-        fullName: document.getElementById('fullName').value.trim(),
-        email: document.getElementById('email').value.trim(),
-        appliedRole: document.getElementById('appliedRole').value.trim(),
-        yearsExperience: Number(document.getElementById('yearsExperience').value),
-        skills: document.getElementById('skills').value.split(',').map(s=>s.trim()).filter(Boolean),
-        resumeUrl: document.getElementById('resumeUrl').value.trim() || undefined
-      };
+<script>
+const form = document.getElementById('careerForm');
+const resultBox = document.getElementById('result');
 
-      if(!data.fullName || !data.email || !data.appliedRole || isNaN(data.yearsExperience) || data.skills.length===0){
-        showResult('Please fill in all required fields.', false);
-        return;
-      }
+function showResult(msg, ok){
+  resultBox.style.display='block';
+  resultBox.className='result ' + (ok ? 'success' : 'error');
+  resultBox.innerText = msg;
+}
 
-      try{
-        const resp = await fetch('https://sensussoft-ai-hiring-automation.vercel.app/api/career-apply', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
-        });
-        const json = await resp.json();
-        if(resp.ok){
-          showResult('Application submitted — received id: ' + (json.profile && json.profile.id ? json.profile.id : 'unknown'));
-          form.reset();
-        } else {
-          showResult('Server error: ' + (json.error || JSON.stringify(json)), false);
-        }
-      } catch(err){
-        showResult('Network error: ' + err.message, false);
-      }
+form.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+
+  const resume = document.getElementById('resumeFile').files[0];
+  if(!resume){
+    showResult('Please upload resume PDF.', false);
+    return;
+  }
+
+  const fd = new FormData();
+  const roleLower = String(body.appliedRole).toLowerCase().trim();
+const roleMatched = ALLOWED_IT_ROLES.some(role => roleLower.includes(role));
+
+if (!roleMatched) {
+  return res.status(400).json({
+    error: 'Currently SensusSoft is accepting applications only for IT, Software Development, and Technical Engineering related positions.'
+  });
+}
+  fd.append('fullName', document.getElementById('fullName').value.trim());
+  fd.append('email', document.getElementById('email').value.trim());
+  fd.append('appliedRole', document.getElementById('appliedRole').value.trim());
+  fd.append('yearsExperience', document.getElementById('yearsExperience').value);
+  fd.append('skills', document.getElementById('skills').value.trim());
+  fd.append('resumeFile', resume);
+
+  try{
+    const resp = await fetch('https://sensussoft-ai-hiring-automation.vercel.app/api/career-apply', {
+      method:'POST',
+      body: fd
     });
-  </script>
+
+    const json = await resp.json();
+
+    if(resp.ok){
+      showResult('Application submitted successfully. Please check your email for the technical assignment.', true);
+      form.reset();
+    }else{
+      showResult(json.error || 'Submission failed.', false);
+    }
+  }catch(err){
+    showResult('Network error: ' + err.message, false);
+  }
+});
+</script>
+
 </body>
 </html>
