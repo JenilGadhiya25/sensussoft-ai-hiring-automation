@@ -6,13 +6,7 @@
 <title>SensusSoft Career Application Portal</title>
 
 <style>
-*{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
-  font-family:'Segoe UI',sans-serif;
-}
-
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif}
 body{
   min-height:100vh;
   background:linear-gradient(135deg,#dbeafe,#eef2ff,#f8fafc);
@@ -20,21 +14,41 @@ body{
   justify-content:center;
   align-items:center;
   padding:25px;
+  overflow:hidden;
+  position:relative;
+}
+body:before,body:after{
+  content:'';
+  position:absolute;
+  border-radius:50%;
+  filter:blur(70px);
+  opacity:.5;
+  animation:float 8s infinite alternate;
+}
+body:before{
+  width:260px;height:260px;background:#93c5fd;top:40px;left:60px;
+}
+body:after{
+  width:320px;height:320px;background:#c4b5fd;bottom:50px;right:80px;
+}
+@keyframes float{
+  from{transform:translateY(0px)}
+  to{transform:translateY(30px)}
 }
 
 .wrapper{
   width:100%;
-  max-width:1250px;
+  max-width:1260px;
   display:grid;
   grid-template-columns:1fr 1.1fr;
-  background:rgba(255,255,255,.9);
+  background:rgba(255,255,255,.92);
   backdrop-filter:blur(14px);
-  border-radius:28px;
+  border-radius:30px;
   overflow:hidden;
   box-shadow:0 25px 70px rgba(37,99,235,.18);
+  z-index:2;
 }
 
-/* LEFT PANEL */
 .left{
   background:linear-gradient(160deg,#2563eb,#1d4ed8,#1e40af);
   color:white;
@@ -45,8 +59,8 @@ body{
 }
 
 .logo{
-  width:72px;
-  height:72px;
+  width:74px;
+  height:74px;
   border-radius:50%;
   background:rgba(255,255,255,.18);
   display:flex;
@@ -55,6 +69,7 @@ body{
   font-size:28px;
   font-weight:700;
   margin-bottom:25px;
+  box-shadow:0 0 25px rgba(255,255,255,.15);
 }
 
 .left h1{
@@ -82,9 +97,13 @@ body{
   padding:14px 16px;
   border-radius:14px;
   font-size:14px;
+  transition:.3s;
 }
 
-/* RIGHT FORM */
+.point:hover{
+  transform:translateX(6px);
+}
+
 .right{
   padding:45px;
 }
@@ -149,6 +168,13 @@ input:focus{
   box-shadow:0 0 0 4px rgba(37,99,235,.12);
 }
 
+.uploadbox{
+  padding:18px;
+  border:2px dashed #93c5fd;
+  border-radius:14px;
+  background:#f8fbff;
+}
+
 button{
   grid-column:1/3;
   margin-top:8px;
@@ -201,15 +227,9 @@ button:disabled{
 }
 
 @media(max-width:900px){
-  .wrapper{
-    grid-template-columns:1fr;
-  }
-  form{
-    grid-template-columns:1fr;
-  }
-  .full,button,.result{
-    grid-column:1/2;
-  }
+  .wrapper{grid-template-columns:1fr}
+  form{grid-template-columns:1fr}
+  .full,button,.result{grid-column:1/2}
 }
 </style>
 </head>
@@ -220,15 +240,12 @@ button:disabled{
   <div class="left">
     <div class="logo">S</div>
     <h1>Enterprise AI Hiring Automation</h1>
-    <p>
-      SensusSoft intelligently screens technical candidates, generates personalized assignments,
-      allocates private GitHub repositories, and delivers enterprise recruitment workflows automatically.
-    </p>
+    <p>SensusSoft intelligently screens technical candidates, generates personalized assignments, allocates GitHub repositories, and automates HR workflows.</p>
 
     <div class="points">
       <div class="point">✔ AI Based Technical Candidate Evaluation</div>
       <div class="point">✔ Personalized Assignment PDF Generation</div>
-      <div class="point">✔ Auto GitHub Private Repository Allocation</div>
+      <div class="point">✔ Auto GitHub Repository Allocation</div>
       <div class="point">✔ Automated HR Email Delivery Workflow</div>
     </div>
   </div>
@@ -236,10 +253,7 @@ button:disabled{
   <div class="right">
     <h2>Career Application Portal</h2>
     <div class="sub">Submit Candidate Details For AI Technical Screening</div>
-
-    <div class="itnote">
-      Only IT / Software / Technical profiles are accepted in this recruitment automation portal.
-    </div>
+    <div class="itnote">Only IT / Software / Technical profiles are accepted in this recruitment automation portal.</div>
 
     <form id="careerForm">
 
@@ -268,7 +282,7 @@ button:disabled{
         <input id="skills" type="text" placeholder="React, Node.js, MongoDB, Figma" required />
       </div>
 
-      <div class="full">
+      <div class="full uploadbox">
         <label>Upload Resume PDF *</label>
         <input id="resumeFile" type="file" accept=".pdf" required />
       </div>
@@ -336,8 +350,6 @@ form.addEventListener('submit', async (e)=>{
       setTimeout(()=>{
         resultBox.style.display='none';
       },4000);
-
-      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     }else{
       showResult(json.error || 'Application submission failed.', false);
     }
