@@ -1,229 +1,285 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>SensusSoft Career Application Portal</title>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SensusSoft Career Application Portal</title>
 
-  <style>
-    *{
-      margin:0;
-      padding:0;
-      box-sizing:border-box;
-      font-family:'Segoe UI',sans-serif;
-    }
+<style>
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:'Segoe UI',sans-serif;
+}
 
-    body{
-      min-height:100vh;
-      background:
-      radial-gradient(circle at top left,#dbeafe,#eef2ff,#f8fafc);
-      padding:40px 20px;
-      display:flex;
-      justify-content:center;
-      align-items:center;
-    }
+body{
+  min-height:100vh;
+  background:linear-gradient(135deg,#dbeafe,#eef2ff,#f8fafc);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  padding:25px;
+}
 
-    .card{
-      width:100%;
-      max-width:900px;
-      background:rgba(255,255,255,0.92);
-      backdrop-filter:blur(15px);
-      border-radius:24px;
-      box-shadow:0 20px 60px rgba(37,99,235,.15);
-      padding:45px;
-      border:1px solid rgba(255,255,255,.6);
-    }
+.wrapper{
+  width:100%;
+  max-width:1250px;
+  display:grid;
+  grid-template-columns:1fr 1.1fr;
+  background:rgba(255,255,255,.9);
+  backdrop-filter:blur(14px);
+  border-radius:28px;
+  overflow:hidden;
+  box-shadow:0 25px 70px rgba(37,99,235,.18);
+}
 
-    .logo{
-      width:70px;
-      height:70px;
-      margin:0 auto 15px;
-      border-radius:50%;
-      background:linear-gradient(135deg,#2563eb,#1d4ed8);
-      color:white;
-      display:flex;
-      justify-content:center;
-      align-items:center;
-      font-size:28px;
-      font-weight:bold;
-      box-shadow:0 10px 25px rgba(37,99,235,.35);
-    }
+/* LEFT PANEL */
+.left{
+  background:linear-gradient(160deg,#2563eb,#1d4ed8,#1e40af);
+  color:white;
+  padding:60px 45px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
 
-    h1{
-      text-align:center;
-      font-size:32px;
-      color:#0f172a;
-      margin-bottom:8px;
-    }
+.logo{
+  width:72px;
+  height:72px;
+  border-radius:50%;
+  background:rgba(255,255,255,.18);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-size:28px;
+  font-weight:700;
+  margin-bottom:25px;
+}
 
-    .sub{
-      text-align:center;
-      color:#64748b;
-      margin-bottom:25px;
-      font-size:14px;
-    }
+.left h1{
+  font-size:38px;
+  line-height:1.25;
+  margin-bottom:16px;
+}
 
-    .itnote{
-      background:#eff6ff;
-      border:1px solid #bfdbfe;
-      color:#1d4ed8;
-      padding:14px;
-      border-radius:12px;
-      font-size:13px;
-      margin-bottom:30px;
-      text-align:center;
-    }
+.left p{
+  font-size:15px;
+  opacity:.92;
+  line-height:1.7;
+  margin-bottom:28px;
+}
 
-    form{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:22px;
-    }
+.points{
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+}
 
-    .full{
-      grid-column:1/3;
-    }
+.point{
+  background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.15);
+  padding:14px 16px;
+  border-radius:14px;
+  font-size:14px;
+}
 
-    label{
-      display:block;
-      margin-bottom:8px;
-      font-weight:600;
-      color:#1e293b;
-      font-size:14px;
-    }
+/* RIGHT FORM */
+.right{
+  padding:45px;
+}
 
-    input{
-      width:100%;
-      padding:14px 16px;
-      border-radius:14px;
-      border:1px solid #dbe2ea;
-      background:#f8fafc;
-      font-size:14px;
-      transition:.3s;
-    }
+.right h2{
+  text-align:center;
+  font-size:30px;
+  color:#0f172a;
+  margin-bottom:8px;
+}
 
-    input:focus{
-      outline:none;
-      border-color:#2563eb;
-      background:white;
-      box-shadow:0 0 0 4px rgba(37,99,235,.12);
-    }
+.sub{
+  text-align:center;
+  color:#64748b;
+  font-size:14px;
+  margin-bottom:22px;
+}
 
-    button{
-      grid-column:1/3;
-      margin-top:8px;
-      padding:16px;
-      border:none;
-      border-radius:14px;
-      background:linear-gradient(135deg,#2563eb,#1d4ed8);
-      color:white;
-      font-size:17px;
-      font-weight:700;
-      cursor:pointer;
-      box-shadow:0 12px 25px rgba(37,99,235,.25);
-      transition:.3s;
-    }
+.itnote{
+  background:#eff6ff;
+  color:#1d4ed8;
+  border:1px solid #bfdbfe;
+  padding:12px;
+  border-radius:12px;
+  font-size:13px;
+  text-align:center;
+  margin-bottom:24px;
+}
 
-    button:hover{
-      transform:translateY(-2px);
-    }
+form{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:18px;
+}
 
-    button:disabled{
-      opacity:.7;
-      cursor:not-allowed;
-    }
+.full{
+  grid-column:1/3;
+}
 
-    .result{
-      grid-column:1/3;
-      margin-top:10px;
-      padding:15px;
-      border-radius:12px;
-      display:none;
-      line-height:1.6;
-      font-size:14px;
-      font-weight:500;
-    }
+label{
+  display:block;
+  margin-bottom:7px;
+  font-weight:600;
+  color:#1e293b;
+  font-size:14px;
+}
 
-    .success{
-      background:#dcfce7;
-      color:#166534;
-      border:1px solid #86efac;
-    }
+input{
+  width:100%;
+  padding:14px 16px;
+  border-radius:14px;
+  border:1px solid #dbe2ea;
+  background:#f8fafc;
+  font-size:14px;
+  transition:.3s;
+}
 
-    .error{
-      background:#fee2e2;
-      color:#991b1b;
-      border:1px solid #fca5a5;
-    }
+input:focus{
+  outline:none;
+  border-color:#2563eb;
+  background:white;
+  box-shadow:0 0 0 4px rgba(37,99,235,.12);
+}
 
-    .footer{
-      margin-top:30px;
-      text-align:center;
-      color:#64748b;
-      font-size:12px;
-    }
+button{
+  grid-column:1/3;
+  margin-top:8px;
+  padding:16px;
+  border:none;
+  border-radius:14px;
+  background:linear-gradient(135deg,#2563eb,#1d4ed8);
+  color:white;
+  font-size:16px;
+  font-weight:700;
+  cursor:pointer;
+  box-shadow:0 12px 25px rgba(37,99,235,.25);
+}
 
-    @media(max-width:700px){
-      form{
-        grid-template-columns:1fr;
-      }
-      .full,button,.result{
-        grid-column:1/2;
-      }
-    }
-  </style>
+button:hover{
+  transform:translateY(-2px);
+}
+
+button:disabled{
+  opacity:.75;
+}
+
+.result{
+  grid-column:1/3;
+  margin-top:8px;
+  padding:14px;
+  border-radius:12px;
+  display:none;
+  line-height:1.6;
+  font-size:14px;
+}
+
+.success{
+  background:#dcfce7;
+  color:#166534;
+  border:1px solid #86efac;
+}
+
+.error{
+  background:#fee2e2;
+  color:#991b1b;
+  border:1px solid #fca5a5;
+}
+
+.footer{
+  margin-top:24px;
+  text-align:center;
+  color:#64748b;
+  font-size:12px;
+}
+
+@media(max-width:900px){
+  .wrapper{
+    grid-template-columns:1fr;
+  }
+  form{
+    grid-template-columns:1fr;
+  }
+  .full,button,.result{
+    grid-column:1/2;
+  }
+}
+</style>
 </head>
 <body>
 
-<div class="card">
+<div class="wrapper">
 
-  <div class="logo">S</div>
+  <div class="left">
+    <div class="logo">S</div>
+    <h1>Enterprise AI Hiring Automation</h1>
+    <p>
+      SensusSoft intelligently screens technical candidates, generates personalized assignments,
+      allocates private GitHub repositories, and delivers enterprise recruitment workflows automatically.
+    </p>
 
-  <h1>SensusSoft Career Application Portal</h1>
-  <div class="sub">AI Powered Technical Candidate Screening & Assignment Engine</div>
-
-  <div class="itnote">
-    Only IT / Software / Technical profiles are accepted in this recruitment automation portal.
+    <div class="points">
+      <div class="point">✔ AI Based Technical Candidate Evaluation</div>
+      <div class="point">✔ Personalized Assignment PDF Generation</div>
+      <div class="point">✔ Auto GitHub Private Repository Allocation</div>
+      <div class="point">✔ Automated HR Email Delivery Workflow</div>
+    </div>
   </div>
 
-  <form id="careerForm">
+  <div class="right">
+    <h2>Career Application Portal</h2>
+    <div class="sub">Submit Candidate Details For AI Technical Screening</div>
 
-    <div>
-      <label>Full Name *</label>
-      <input id="fullName" type="text" required />
+    <div class="itnote">
+      Only IT / Software / Technical profiles are accepted in this recruitment automation portal.
     </div>
 
-    <div>
-      <label>Email Address *</label>
-      <input id="email" type="email" required />
-    </div>
+    <form id="careerForm">
 
-    <div>
-      <label>Applied Role *</label>
-      <input id="appliedRole" type="text" placeholder="React Developer / UI UX Designer" required />
-    </div>
+      <div>
+        <label>Full Name *</label>
+        <input id="fullName" type="text" required />
+      </div>
 
-    <div>
-      <label>Years of Experience *</label>
-      <input id="yearsExperience" type="number" min="0" step="0.1" required />
-    </div>
+      <div>
+        <label>Email Address *</label>
+        <input id="email" type="email" required />
+      </div>
 
-    <div class="full">
-      <label>Known Skills (comma separated) *</label>
-      <input id="skills" type="text" placeholder="React, Node.js, MongoDB, Figma" required />
-    </div>
+      <div>
+        <label>Applied Role *</label>
+        <input id="appliedRole" type="text" placeholder="React Developer / UI UX Designer" required />
+      </div>
 
-    <div class="full">
-      <label>Upload Resume PDF *</label>
-      <input id="resumeFile" type="file" accept=".pdf" required />
-    </div>
+      <div>
+        <label>Years of Experience *</label>
+        <input id="yearsExperience" type="number" min="0" step="0.1" required />
+      </div>
 
-    <button id="submitBtn" type="submit">Submit Career Application</button>
+      <div class="full">
+        <label>Known Skills (comma separated) *</label>
+        <input id="skills" type="text" placeholder="React, Node.js, MongoDB, Figma" required />
+      </div>
 
-    <div id="result" class="result"></div>
-  </form>
+      <div class="full">
+        <label>Upload Resume PDF *</label>
+        <input id="resumeFile" type="file" accept=".pdf" required />
+      </div>
 
-  <div class="footer">Powered by SensusSoft Enterprise AI Hiring Automation</div>
+      <button id="submitBtn" type="submit">Submit Career Application</button>
+
+      <div id="result" class="result"></div>
+    </form>
+
+    <div class="footer">Powered by SensusSoft Enterprise AI Hiring Automation</div>
+  </div>
 </div>
 
 <script>
@@ -275,7 +331,6 @@ form.addEventListener('submit', async (e)=>{
 
     if(resp.ok){
       form.reset();
-
       showResult('✅ Candidate application submitted successfully. Personalized technical assignment document has been delivered to candidate email.', true);
 
       setTimeout(()=>{
