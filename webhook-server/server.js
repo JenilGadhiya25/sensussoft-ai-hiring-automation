@@ -17,6 +17,23 @@ const AUDIT_LOG_PATH = process.env.AUDIT_LOG_PATH || path.join(__dirname, '..', 
 const SMTP_EMAIL = process.env.SMTP_EMAIL;
 const SMTP_PASS = process.env.SMTP_PASS;
 
+const TECH_ROLE_KEYWORDS = [
+  'developer','engineer','software','web','frontend','backend','full stack',
+  'mern','mean','app','application','designer','ui','ux','qa','tester',
+  'devops','cloud','ai','ml','machine learning','data','analyst',
+  'cyber','security','python','react','node','java','php','flutter',
+  'android','ios','wordpress','laravel','angular','technical'
+];
+
+const TECH_SKILL_KEYWORDS = [
+  'react','next','node','node.js','javascript','typescript','html','css',
+  'mongodb','mysql','sql','firebase','python','django','flask','figma',
+  'ui','ux','testing','qa','devops','docker','aws','git','github','api',
+  'express','java','php','laravel','angular','flutter','dart','android',
+  'ios','swift','kotlin','machine learning','ai','ml','data science',
+  'cyber security','wordpress','cloud','linux','c++','c#','full stack'
+];
+
 app.use(express.json());
 app.use((req,res,next)=>{
   res.setHeader('Access-Control-Allow-Origin','*');
@@ -62,35 +79,22 @@ function enrichSkillsFromSignals(role,resumeText,skills){
   const enriched = new Set(skills);
 
   if(/react|frontend|html|css|javascript|next/.test(signal)){
-    enriched.add('React');
-    enriched.add('Frontend Architecture');
-    enriched.add('Responsive UI');
+    enriched.add('React'); enriched.add('Frontend Architecture'); enriched.add('Responsive UI');
   }
   if(/node|backend|express|api|server/.test(signal)){
-    enriched.add('Node.js');
-    enriched.add('REST API');
-    enriched.add('Database Logic');
+    enriched.add('Node.js'); enriched.add('REST API'); enriched.add('Database Logic');
   }
   if(/full stack|mern|developer|software engineer/.test(signal)){
-    enriched.add('React');
-    enriched.add('Node.js');
-    enriched.add('MongoDB');
-    enriched.add('Full Stack Workflow');
+    enriched.add('React'); enriched.add('Node.js'); enriched.add('MongoDB'); enriched.add('Full Stack Workflow');
   }
   if(/ui|ux|figma|designer|product design/.test(signal)){
-    enriched.add('Figma');
-    enriched.add('Wireframing');
-    enriched.add('Prototype');
-    enriched.add('Design System');
+    enriched.add('Figma'); enriched.add('Wireframing'); enriched.add('Prototype'); enriched.add('Design System');
   }
   if(/python|automation|django|flask/.test(signal)){
-    enriched.add('Python');
-    enriched.add('Automation');
-    enriched.add('Reporting');
+    enriched.add('Python'); enriched.add('Automation'); enriched.add('Reporting');
   }
   if(/qa|tester|testing/.test(signal)){
-    enriched.add('Manual Testing');
-    enriched.add('Automation Testing');
+    enriched.add('Manual Testing'); enriched.add('Automation Testing');
   }
 
   return [...enriched];
@@ -101,34 +105,10 @@ function smartFallbackAssignment(roleBucket, domain, skills){
     projectTitle:`Build a ${domain} ${roleBucket.toUpperCase()} Enterprise Solution`,
     projectIntroduction:`Develop a practical enterprise grade software solution focused on ${domain} business workflows.`,
     businessObjective:`Demonstrate architecture understanding, implementation quality, and real-world production thinking.`,
-    functionalModules:[
-      'Planning and Requirement Analysis',
-      'Main Core Development',
-      'Admin or Management Workflow',
-      'Reporting and Monitoring',
-      'Testing and Validation',
-      'Deployment and Documentation'
-    ],
-    technicalRequirements:[
-      `Use stack: ${skills.join(', ')}`,
-      'Clean coding standards',
-      'Professional architecture',
-      'Deployment ready output',
-      'README documentation',
-      'Screenshots/demo'
-    ],
-    deliverables:[
-      'Source code repository',
-      'Live deployment',
-      'Setup document',
-      'Demo assets'
-    ],
-    evaluationCriteria:[
-      'Code quality',
-      'Feature completeness',
-      'Business understanding',
-      'Submission professionalism'
-    ],
+    functionalModules:['Planning and Requirement Analysis','Main Core Development','Admin or Management Workflow','Reporting and Monitoring','Testing and Validation','Deployment and Documentation'],
+    technicalRequirements:[`Use stack: ${skills.join(', ')}`,'Clean coding standards','Professional architecture','Deployment ready output','README documentation','Screenshots/demo'],
+    deliverables:['Source code repository','Live deployment','Setup document','Demo assets'],
+    evaluationCriteria:['Code quality','Feature completeness','Business understanding','Submission professionalism'],
     timeline:'3 Working Days',
     recommendedStack:skills
   };
@@ -139,10 +119,7 @@ async function extractResumeText(file){
     let txt = '';
     txt += ' ' + (file.originalname || '');
     txt += ' ' + (file.mimetype || '');
-
-    const cleanedName = (file.originalname || '').replace(/[_\-\.]/g,' ').replace(/pdf/gi,' ').toLowerCase();
-    txt += ' ' + cleanedName;
-
+    txt += ' ' + (file.originalname || '').replace(/[_\-\.]/g,' ').replace(/pdf/gi,' ').toLowerCase();
     return txt;
   }catch{
     return '';
@@ -183,13 +160,11 @@ async function writeAuditLog(entry){
   try{
     const dir = path.dirname(AUDIT_LOG_PATH);
     if(!normalfs.existsSync(dir)) normalfs.mkdirSync(dir,{recursive:true});
-
     let arr = [];
     if(normalfs.existsSync(AUDIT_LOG_PATH)){
       arr = JSON.parse(await fs.readFile(AUDIT_LOG_PATH,'utf8'));
       if(!Array.isArray(arr)) arr = [];
     }
-
     arr.push(entry);
     await fs.writeFile(AUDIT_LOG_PATH, JSON.stringify(arr,null,2));
   }catch(err){
@@ -199,7 +174,6 @@ async function writeAuditLog(entry){
 
 async function generateAssignmentPDF(candidate){
   const pdfPath = IS_VERCEL ? `/tmp/assignment-${Date.now()}.pdf` : path.join(__dirname,`assignment-${Date.now()}.pdf`);
-
   return new Promise((resolve)=>{
     const doc = new PDFDocument({margin:50});
     const stream = normalfs.createWriteStream(pdfPath);
@@ -218,38 +192,10 @@ async function generateAssignmentPDF(candidate){
 
     doc.fontSize(16).text('1. Assigned Project Title');
     doc.fontSize(12).text(candidate.assignment.projectTitle);
-    doc.moveDown();
 
-    doc.fontSize(16).text('2. Project Introduction');
-    doc.fontSize(12).text(candidate.assignment.projectIntroduction);
     doc.moveDown();
-
-    doc.fontSize(16).text('3. Business Objective');
-    doc.fontSize(12).text(candidate.assignment.businessObjective);
-    doc.moveDown();
-
-    doc.fontSize(16).text('4. Functional Modules');
+    doc.fontSize(16).text('2. Functional Modules');
     candidate.assignment.functionalModules.forEach((m,i)=>doc.fontSize(12).text(`${i+1}. ${m}`));
-    doc.moveDown();
-
-    doc.fontSize(16).text('5. Technical Requirements');
-    candidate.assignment.technicalRequirements.forEach((m,i)=>doc.fontSize(12).text(`${i+1}. ${m}`));
-    doc.addPage();
-
-    doc.fontSize(16).text('6. Deliverables');
-    candidate.assignment.deliverables.forEach((m,i)=>doc.fontSize(12).text(`${i+1}. ${m}`));
-    doc.moveDown();
-
-    doc.fontSize(16).text('7. Evaluation Criteria');
-    candidate.assignment.evaluationCriteria.forEach((m,i)=>doc.fontSize(12).text(`${i+1}. ${m}`));
-    doc.moveDown();
-
-    doc.fontSize(16).text('8. Recommended Stack');
-    candidate.assignment.recommendedStack.forEach((m,i)=>doc.fontSize(12).text(`${i+1}. ${m}`));
-    doc.moveDown(2);
-
-    doc.text('Regards,');
-    doc.text('SensusSoft HR & Technical Recruitment Team');
 
     doc.end();
     stream.on('finish',()=>resolve(pdfPath));
@@ -269,9 +215,19 @@ app.post('/api/career-apply', upload.single('resumeFile'), async (req,res)=>{
       return res.status(400).json({error:'Missing required fields'});
     }
 
+    const roleIsTech = TECH_ROLE_KEYWORDS.some(word => appliedRole.toLowerCase().includes(word));
+    const skillsAreTech = skills.some(skill =>
+      TECH_SKILL_KEYWORDS.some(word => skill.toLowerCase().includes(word))
+    );
+
+    if(!roleIsTech && !skillsAreTech){
+      return res.status(400).json({
+        error:'Currently we are accepting applications only for IT and Software related positions.'
+      });
+    }
+
     const resumeText = req.file ? await extractResumeText(req.file) : '';
     const enrichedSkills = enrichSkillsFromSignals(appliedRole,resumeText,skills);
-
     const assignment = await generateAssignmentWithAI(appliedRole,resumeText,enrichedSkills,fullName,yearsExperience);
 
     let githubRepo = null;
@@ -309,8 +265,6 @@ Please find attached your personalized technical assignment.
 
 Assigned Private GitHub Repository:
 ${candidate.githubRepoUrl}
-
-You are required to push all project commits only on this repository.
 
 Regards,
 SensusSoft HR Team`,
