@@ -3,81 +3,143 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SensusSoft Career Application</title>
+  <title>SensusSoft Career Application Portal</title>
   <style>
+    *{box-sizing:border-box;font-family:Arial,sans-serif}
     body{
-      font-family:Arial,sans-serif;
-      max-width:700px;
-      margin:40px auto;
-      padding:20px;
-      background:#f5f7fb
+      margin:0;
+      padding:30px;
+      background:linear-gradient(135deg,#dbeafe,#f8fafc,#e0e7ff);
+      min-height:100vh;
+      display:flex;
+      justify-content:center;
+      align-items:center;
     }
-    form{
-      background:#fff;
-      padding:25px;
-      border-radius:12px;
-      box-shadow:0 2px 10px rgba(0,0,0,.08)
+    .card{
+      width:100%;
+      max-width:760px;
+      background:rgba(255,255,255,0.95);
+      border-radius:18px;
+      box-shadow:0 10px 35px rgba(0,0,0,.12);
+      padding:35px;
     }
-    h2{text-align:center}
+    h1{
+      text-align:center;
+      margin:0;
+      color:#1e3a8a;
+      font-size:30px;
+    }
+    .sub{
+      text-align:center;
+      color:#555;
+      margin-top:8px;
+      margin-bottom:25px;
+      font-size:14px;
+    }
+    .itnote{
+      background:#eff6ff;
+      color:#1d4ed8;
+      padding:12px;
+      border-radius:10px;
+      font-size:13px;
+      margin-bottom:20px;
+      border:1px solid #bfdbfe;
+    }
     label{
       display:block;
-      margin-top:15px;
-      font-weight:bold
+      margin-top:16px;
+      font-weight:bold;
+      color:#111827;
     }
-    input,button{
+    input{
       width:100%;
-      padding:10px;
-      margin-top:6px;
-      border:1px solid #ccc;
-      border-radius:8px;
-      box-sizing:border-box
+      padding:12px;
+      margin-top:7px;
+      border:1px solid #cbd5e1;
+      border-radius:10px;
+      font-size:14px;
+    }
+    input:focus{
+      outline:none;
+      border-color:#2563eb;
+      box-shadow:0 0 0 3px rgba(37,99,235,.15);
     }
     button{
-      background:#2563eb;
-      color:#fff;
+      width:100%;
+      margin-top:24px;
+      padding:14px;
       border:none;
+      border-radius:10px;
+      background:#2563eb;
+      color:white;
+      font-size:16px;
+      font-weight:bold;
       cursor:pointer;
-      font-size:16px
+      transition:.3s;
     }
     button:hover{background:#1d4ed8}
-    .note{margin-top:15px;font-size:13px;color:#666}
+    button:disabled{background:#93c5fd;cursor:not-allowed}
     .result{
-      margin-top:15px;
-      padding:12px;
-      border-radius:8px;
-      display:none
+      margin-top:18px;
+      padding:14px;
+      border-radius:10px;
+      display:none;
+      font-size:14px;
+      line-height:1.5;
     }
-    .success{background:#dcfce7;color:#166534}
-    .error{background:#fee2e2;color:#991b1b}
+    .success{
+      background:#dcfce7;
+      color:#166534;
+      border:1px solid #86efac;
+    }
+    .error{
+      background:#fee2e2;
+      color:#991b1b;
+      border:1px solid #fca5a5;
+    }
+    .footer{
+      margin-top:18px;
+      text-align:center;
+      font-size:12px;
+      color:#64748b;
+    }
   </style>
 </head>
 <body>
 
-<form id="careerForm">
-  <h2>SensusSoft Career Application Form</h2>
+<div class="card">
+  <h1>SensusSoft Career Application Portal</h1>
+  <div class="sub">AI Powered Technical Candidate Screening & Assignment Engine</div>
 
-  <label for="fullName">Full Name *</label>
-  <input id="fullName" type="text" required />
+  <div class="itnote">
+    Note: Currently we are accepting applications only for IT / Software / Technical positions.
+  </div>
 
-  <label for="email">Email *</label>
-  <input id="email" type="email" required />
+  <form id="careerForm">
+    <label>Full Name *</label>
+    <input id="fullName" type="text" required />
 
-  <label for="appliedRole">Applied Role *</label>
-  <input id="appliedRole" type="text" placeholder="Enter Applied IT Role" required />
+    <label>Email Address *</label>
+    <input id="email" type="email" required />
 
-  <label for="yearsExperience">Years of Experience *</label>
-  <input id="yearsExperience" type="number" min="0" step="0.1" required />
+    <label>Applied Role *</label>
+    <input id="appliedRole" type="text" placeholder="React Developer / UI UX Designer / Node Backend Developer" required />
 
-  <label for="skills">Known Skills (comma separated) *</label>
-  <input id="skills" type="text" placeholder="React, Node.js, MongoDB" required />
+    <label>Years of Experience *</label>
+    <input id="yearsExperience" type="number" min="0" step="0.1" required />
 
-  <label for="resumeFile">Upload Resume PDF *</label>
-  <input id="resumeFile" type="file" accept=".pdf" required />
+    <label>Known Skills (comma separated) *</label>
+    <input id="skills" type="text" placeholder="React, Node.js, MongoDB, Figma" required />
 
-  <button id="submitBtn" type="submit">Submit Application</button>
-  <div class="note">Powered by SensusSoft AI Hiring Automation</div>
-  <div id="result" class="result"></div>
-</form>
+    <label>Upload Resume PDF *</label>
+    <input id="resumeFile" type="file" accept=".pdf" required />
+
+    <button id="submitBtn" type="submit">Submit Career Application</button>
+    <div id="result" class="result"></div>
+  </form>
+
+  <div class="footer">Powered by SensusSoft Enterprise AI Hiring Automation</div>
+</div>
 
 <script>
 const form = document.getElementById('careerForm');
@@ -95,12 +157,12 @@ form.addEventListener('submit', async (e)=>{
 
   const resume = document.getElementById('resumeFile').files[0];
   if(!resume){
-    showResult('Please upload resume PDF.', false);
+    showResult('Please upload candidate resume PDF.', false);
     return;
   }
 
   submitBtn.disabled = true;
-  submitBtn.innerText = 'Submitting Please Wait...';
+  submitBtn.innerText = 'Processing Candidate Application...';
 
   const fd = new FormData();
   fd.append('fullName', document.getElementById('fullName').value.trim());
@@ -111,12 +173,7 @@ form.addEventListener('submit', async (e)=>{
   fd.append('resumeFile', resume);
 
   try{
-
-    // LOCAL TEST:
     const API_URL = 'https://sensussoft-ai-hiring-automation.vercel.app/api/career-apply';
-
-    // LIVE DEPLOY MA AANE CHANGE KARVU:
-    // const API_URL = 'https://sensussoft-ai-hiring-automation.vercel.app/api/career-apply';
 
     const resp = await fetch(API_URL,{
       method:'POST',
@@ -124,7 +181,6 @@ form.addEventListener('submit', async (e)=>{
     });
 
     const txt = await resp.text();
-
     let json = {};
     try{
       json = JSON.parse(txt);
@@ -133,12 +189,11 @@ form.addEventListener('submit', async (e)=>{
     }
 
     if(resp.ok){
-      alert('✅ Application Submitted Successfully!\nTechnical Assignment PDF Sent To Candidate Email.');
+      showResult('✅ Candidate application submitted successfully. Personalized technical assignment document has been delivered to candidate email.', true);
       form.reset();
-      resultBox.style.display='none';
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     }else{
-      showResult(json.error || 'Submission failed.', false);
+      showResult(json.error || 'Application submission failed.', false);
     }
 
   }catch(err){
@@ -146,7 +201,7 @@ form.addEventListener('submit', async (e)=>{
   }
 
   submitBtn.disabled = false;
-  submitBtn.innerText = 'Submit Application';
+  submitBtn.innerText = 'Submit Career Application';
 });
 </script>
 

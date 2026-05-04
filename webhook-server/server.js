@@ -4,7 +4,6 @@ const multer = require('multer');
 const fs = require('fs').promises;
 const normalfs = require('fs');
 const path = require('path');
-const fetch = require('node-fetch');
 const PDFDocument = require('pdfkit');
 const nodemailer = require('nodemailer');
 const { createRepo } = require('../github-demo/githubService');
@@ -19,19 +18,19 @@ const SMTP_PASS = process.env.SMTP_PASS;
 
 const TECH_ROLE_KEYWORDS = [
   'developer','engineer','software','web','frontend','backend','full stack',
-  'mern','mean','app','application','designer','ui','ux','qa','tester',
-  'devops','cloud','ai','ml','machine learning','data','analyst',
-  'cyber','security','python','react','node','java','php','flutter',
-  'android','ios','wordpress','laravel','angular','technical'
+  'mern','mean','designer','ui','ux','qa','tester','devops','cloud',
+  'ai','ml','machine learning','data','analyst','cyber','security',
+  'python','react','node','java','php','flutter','android','ios',
+  'wordpress','laravel','angular','technical'
 ];
 
 const TECH_SKILL_KEYWORDS = [
-  'react','next','node','node.js','javascript','typescript','html','css',
-  'mongodb','mysql','sql','firebase','python','django','flask','figma',
-  'ui','ux','testing','qa','devops','docker','aws','git','github','api',
-  'express','java','php','laravel','angular','flutter','dart','android',
-  'ios','swift','kotlin','machine learning','ai','ml','data science',
-  'cyber security','wordpress','cloud','linux','c++','c#','full stack'
+  'react','next','node','javascript','typescript','html','css','mongodb',
+  'mysql','sql','firebase','python','django','flask','figma','ui','ux',
+  'testing','qa','devops','docker','aws','git','github','api','express',
+  'java','php','laravel','angular','flutter','dart','android','ios',
+  'swift','kotlin','ai','ml','data science','cyber security','linux',
+  'c++','c#','full stack'
 ];
 
 app.use(express.json());
@@ -43,7 +42,7 @@ app.use((req,res,next)=>{
   next();
 });
 
-const upload = multer({ dest: IS_VERCEL ? '/tmp' : path.join(__dirname, 'uploads/') });
+const upload = multer({ dest: IS_VERCEL ? '/tmp' : path.join(__dirname,'uploads/') });
 
 const transporter = nodemailer.createTransport({
   service:'gmail',
@@ -52,108 +51,159 @@ const transporter = nodemailer.createTransport({
 
 function detectRoleBucket(role=''){
   const r = role.toLowerCase();
-  if(/ui|ux|product designer|web designer|figma|graphic/.test(r)) return 'uiux';
+  if(/ui|ux|figma|designer/.test(r)) return 'uiux';
   if(/frontend|react|angular|vue|html|css|javascript/.test(r)) return 'frontend';
-  if(/backend|node|express|api developer|server/.test(r)) return 'backend';
-  if(/full stack|mern|mean|software engineer|web developer|developer/.test(r)) return 'fullstack';
-  if(/python|flask|django|automation|data/.test(r)) return 'python';
+  if(/backend|node|express|api|server/.test(r)) return 'backend';
+  if(/full stack|mern|developer|software engineer|web developer/.test(r)) return 'fullstack';
+  if(/python|django|flask|automation|data/.test(r)) return 'python';
   if(/qa|tester|testing/.test(r)) return 'qa';
-  if(/devops|cloud|aws|deployment/.test(r)) return 'devops';
+  if(/devops|cloud|aws/.test(r)) return 'devops';
   return 'general';
-}
-
-function detectBusinessDomain(text=''){
-  const t = text.toLowerCase();
-  if(/health|doctor|patient|medical|hospital/.test(t)) return 'Healthcare';
-  if(/shop|ecommerce|cart|product/.test(t)) return 'Ecommerce';
-  if(/food|restaurant|delivery/.test(t)) return 'Food Delivery';
-  if(/finance|bank|wallet|payment/.test(t)) return 'Fintech';
-  if(/travel|hotel|booking/.test(t)) return 'Travel';
-  if(/school|student|education/.test(t)) return 'Education';
-  if(/crm|lead|sales/.test(t)) return 'CRM';
-  return 'Business Automation';
 }
 
 function enrichSkillsFromSignals(role,resumeText,skills){
   const signal = `${role} ${resumeText} ${skills.join(' ')}`.toLowerCase();
   const enriched = new Set(skills);
 
-  if(/react|frontend|html|css|javascript|next/.test(signal)){
-    enriched.add('React'); enriched.add('Frontend Architecture'); enriched.add('Responsive UI');
+  if(/react|frontend|html|css|javascript/.test(signal)){
+    enriched.add('React');
+    enriched.add('Responsive UI');
+    enriched.add('Frontend Architecture');
   }
-  if(/node|backend|express|api|server/.test(signal)){
-    enriched.add('Node.js'); enriched.add('REST API'); enriched.add('Database Logic');
+  if(/node|backend|express|api/.test(signal)){
+    enriched.add('Node.js');
+    enriched.add('REST API');
+    enriched.add('Database Logic');
   }
-  if(/full stack|mern|developer|software engineer/.test(signal)){
-    enriched.add('React'); enriched.add('Node.js'); enriched.add('MongoDB'); enriched.add('Full Stack Workflow');
+  if(/full stack|mern|developer/.test(signal)){
+    enriched.add('MongoDB');
+    enriched.add('Full Stack Workflow');
   }
-  if(/ui|ux|figma|designer|product design/.test(signal)){
-    enriched.add('Figma'); enriched.add('Wireframing'); enriched.add('Prototype'); enriched.add('Design System');
+  if(/ui|ux|figma|designer/.test(signal)){
+    enriched.add('Figma');
+    enriched.add('Wireframing');
+    enriched.add('Prototype');
   }
-  if(/python|automation|django|flask/.test(signal)){
-    enriched.add('Python'); enriched.add('Automation'); enriched.add('Reporting');
-  }
-  if(/qa|tester|testing/.test(signal)){
-    enriched.add('Manual Testing'); enriched.add('Automation Testing');
+  if(/python|automation/.test(signal)){
+    enriched.add('Python Automation');
+    enriched.add('Reporting');
   }
 
   return [...enriched];
 }
 
-function smartFallbackAssignment(roleBucket, domain, skills){
-  return {
-    projectTitle:`Build a ${domain} ${roleBucket.toUpperCase()} Enterprise Solution`,
-    projectIntroduction:`Develop a practical enterprise grade software solution focused on ${domain} business workflows.`,
-    businessObjective:`Demonstrate architecture understanding, implementation quality, and real-world production thinking.`,
-    functionalModules:['Planning and Requirement Analysis','Main Core Development','Admin or Management Workflow','Reporting and Monitoring','Testing and Validation','Deployment and Documentation'],
-    technicalRequirements:[`Use stack: ${skills.join(', ')}`,'Clean coding standards','Professional architecture','Deployment ready output','README documentation','Screenshots/demo'],
-    deliverables:['Source code repository','Live deployment','Setup document','Demo assets'],
-    evaluationCriteria:['Code quality','Feature completeness','Business understanding','Submission professionalism'],
+function generateAssignment(roleBucket, skills, yearsExperience){
+  let seniority = 'Junior';
+  if(yearsExperience >= 5) seniority = 'Senior';
+  else if(yearsExperience >= 3) seniority = 'Mid Level';
+
+  const base = {
+    projectIntroduction:'Candidate is required to build an enterprise-grade practical software solution demonstrating production-level coding discipline, architecture understanding, UI/UX quality, deployment readiness, and documentation practices.',
+    businessObjective:'The objective of this evaluation is to assess the candidate’s real-world implementation thinking, scalability approach, debugging capability, clean coding standards, and professional delivery mindset.',
+    technicalRequirements:[
+      `Mandatory technology stack: ${skills.join(', ')}`,
+      'Maintain scalable folder architecture',
+      'Use reusable components/modules',
+      'Deployment ready implementation',
+      'Professional README documentation',
+      'Screenshots/demo proof'
+    ],
+    deliverables:[
+      'Complete source code in assigned GitHub repository',
+      'Live deployed URL',
+      'README setup instructions',
+      'Screenshots or demo recording'
+    ],
+    evaluationCriteria:[
+      'Code quality and standards',
+      'Feature completeness',
+      'Architecture understanding',
+      'Professional submission quality'
+    ],
     timeline:'3 Working Days',
     recommendedStack:skills
+  };
+
+  if(roleBucket === 'uiux'){
+    return {
+      ...base,
+      projectTitle:`${seniority} UX Modernization Design Case Study`,
+      functionalModules:[
+        'Competitor UX Research',
+        'User Journey Mapping',
+        'Wireframe Planning',
+        '15+ High Fidelity Figma Screens',
+        'Clickable Prototype',
+        'Design System Guidelines'
+      ]
+    };
+  }
+
+  if(roleBucket === 'frontend'){
+    return {
+      ...base,
+      projectTitle:`${seniority} Enterprise Analytics Dashboard Frontend`,
+      functionalModules:[
+        'Secure Login UI',
+        'Dashboard KPI Cards',
+        'Data Listing Tables',
+        'Search Filter Pagination',
+        'Notification Center',
+        'Responsive Mobile Design'
+      ]
+    };
+  }
+
+  if(roleBucket === 'backend'){
+    return {
+      ...base,
+      projectTitle:`${seniority} Recruitment REST API Backend System`,
+      functionalModules:[
+        'JWT Authentication APIs',
+        'Candidate CRUD APIs',
+        'Admin Authorization',
+        'Interview Scheduling APIs',
+        'Analytics Reports APIs',
+        'Swagger Documentation'
+      ]
+    };
+  }
+
+  if(roleBucket === 'python'){
+    return {
+      ...base,
+      projectTitle:`${seniority} Python Data Automation Utility`,
+      functionalModules:[
+        'Bulk Data Parser',
+        'Validation Engine',
+        'Summary Analytics',
+        'Export Reports',
+        'Automation Logs',
+        'Execution Utility'
+      ]
+    };
+  }
+
+  return {
+    ...base,
+    projectTitle:`${seniority} Complete SaaS Hiring Automation Platform`,
+    functionalModules:[
+      'Candidate Application Portal',
+      'Resume Upload Workflow',
+      'Secure Admin Dashboard',
+      'Assignment Generator Panel',
+      'Analytics Reports',
+      'Live Deployment'
+    ]
   };
 }
 
 async function extractResumeText(file){
   try{
-    let txt = '';
-    txt += ' ' + (file.originalname || '');
-    txt += ' ' + (file.mimetype || '');
-    txt += ' ' + (file.originalname || '').replace(/[_\-\.]/g,' ').replace(/pdf/gi,' ').toLowerCase();
-    return txt;
+    return `${file.originalname || ''} ${file.mimetype || ''}`.toLowerCase();
   }catch{
     return '';
   }
-}
-
-async function generateAssignmentWithAI(role,resumeText,skills,fullName,yearsExperience){
-  const roleBucket = detectRoleBucket(role);
-  const domain = detectBusinessDomain(resumeText + ' ' + skills.join(' '));
-
-  let seniority = 'Junior';
-  if(yearsExperience >= 5) seniority = 'Senior';
-  else if(yearsExperience >= 3) seniority = 'Mid Level';
-
-  let assignment = smartFallbackAssignment(roleBucket,domain,skills);
-
-  if(roleBucket === 'uiux'){
-    assignment.projectTitle = `${seniority} UX Transformation Case Study for ${domain} Mobile App`;
-    assignment.functionalModules = ['Competitor UX Benchmark','User Journey Mapping','Low Fidelity Wireframes','18+ High Fidelity Screens','Clickable Prototype','Design System Documentation'];
-  }else if(roleBucket === 'frontend'){
-    assignment.projectTitle = `${seniority} ${domain} Analytics Admin Dashboard Development`;
-    assignment.functionalModules = ['JWT Login UI','Dashboard KPI Cards','Listing Tables','Search/Sort/Pagination','Notification Center','Responsive Mobile UI'];
-  }else if(roleBucket === 'backend'){
-    assignment.projectTitle = `${seniority} ${domain} Enterprise Recruitment REST API System`;
-    assignment.functionalModules = ['JWT Authentication','Candidate CRUD APIs','Admin Authorization','Interview Scheduler','Report APIs','Swagger Docs'];
-  }else if(roleBucket === 'fullstack'){
-    assignment.projectTitle = `${seniority} Complete ${domain} SaaS Hiring Automation Platform`;
-    assignment.functionalModules = ['Candidate Application Portal','Resume Upload Workflow','Secure Admin Dashboard','Assignment Generator Panel','Analytics Reports','Live Deployment'];
-  }else if(roleBucket === 'python'){
-    assignment.projectTitle = `${seniority} ${domain} Python Automation Reporting Utility`;
-    assignment.functionalModules = ['Bulk Data Parser','Validation Engine','Summary Analytics','Export Reports','Automation Logs','Execution Utility'];
-  }
-
-  return assignment;
 }
 
 async function writeAuditLog(entry){
@@ -174,13 +224,14 @@ async function writeAuditLog(entry){
 
 async function generateAssignmentPDF(candidate){
   const pdfPath = IS_VERCEL ? `/tmp/assignment-${Date.now()}.pdf` : path.join(__dirname,`assignment-${Date.now()}.pdf`);
+
   return new Promise((resolve)=>{
-    const doc = new PDFDocument({margin:50});
+    const doc = new PDFDocument({margin:45});
     const stream = normalfs.createWriteStream(pdfPath);
     doc.pipe(stream);
 
     doc.fontSize(22).text('SensusSoft Technologies Pvt. Ltd.',{align:'center'});
-    doc.fontSize(14).text('Candidate Personalized Technical Evaluation Assignment',{align:'center'});
+    doc.fontSize(15).text('Candidate Personalized Technical Evaluation Assignment Document',{align:'center'});
     doc.moveDown(2);
 
     doc.fontSize(12).text(`Candidate Name: ${candidate.fullName}`);
@@ -192,10 +243,47 @@ async function generateAssignmentPDF(candidate){
 
     doc.fontSize(16).text('1. Assigned Project Title');
     doc.fontSize(12).text(candidate.assignment.projectTitle);
-
     doc.moveDown();
-    doc.fontSize(16).text('2. Functional Modules');
+
+    doc.fontSize(16).text('2. Project Introduction');
+    doc.fontSize(12).text(candidate.assignment.projectIntroduction);
+    doc.moveDown();
+
+    doc.fontSize(16).text('3. Business Objective');
+    doc.fontSize(12).text(candidate.assignment.businessObjective);
+    doc.moveDown();
+
+    doc.fontSize(16).text('4. Functional Modules');
     candidate.assignment.functionalModules.forEach((m,i)=>doc.fontSize(12).text(`${i+1}. ${m}`));
+    doc.moveDown();
+
+    doc.fontSize(16).text('5. Technical Requirements');
+    candidate.assignment.technicalRequirements.forEach((m,i)=>doc.fontSize(12).text(`${i+1}. ${m}`));
+
+    doc.addPage();
+
+    doc.fontSize(16).text('6. Deliverables');
+    candidate.assignment.deliverables.forEach((m,i)=>doc.fontSize(12).text(`${i+1}. ${m}`));
+    doc.moveDown();
+
+    doc.fontSize(16).text('7. Evaluation Criteria');
+    candidate.assignment.evaluationCriteria.forEach((m,i)=>doc.fontSize(12).text(`${i+1}. ${m}`));
+    doc.moveDown();
+
+    doc.fontSize(16).text('8. Recommended Technology Stack');
+    candidate.assignment.recommendedStack.forEach((m,i)=>doc.fontSize(12).text(`${i+1}. ${m}`));
+    doc.moveDown();
+
+    doc.fontSize(16).text('9. Submission Notes');
+    doc.fontSize(12).text('• Candidate must push all project commits to assigned GitHub repository.');
+    doc.text('• Use proper enterprise folder structure and code comments.');
+    doc.text('• README installation steps are mandatory.');
+    doc.text('• Live deployment URL must be submitted.');
+    doc.text('• Final delivery should be completed within deadline.');
+
+    doc.moveDown(2);
+    doc.text('Regards,');
+    doc.text('SensusSoft HR & Technical Recruitment Team');
 
     doc.end();
     stream.on('finish',()=>resolve(pdfPath));
@@ -216,9 +304,7 @@ app.post('/api/career-apply', upload.single('resumeFile'), async (req,res)=>{
     }
 
     const roleIsTech = TECH_ROLE_KEYWORDS.some(word => appliedRole.toLowerCase().includes(word));
-    const skillsAreTech = skills.some(skill =>
-      TECH_SKILL_KEYWORDS.some(word => skill.toLowerCase().includes(word))
-    );
+    const skillsAreTech = skills.some(skill => TECH_SKILL_KEYWORDS.some(word => skill.toLowerCase().includes(word)));
 
     if(!roleIsTech && !skillsAreTech){
       return res.status(400).json({
@@ -228,7 +314,7 @@ app.post('/api/career-apply', upload.single('resumeFile'), async (req,res)=>{
 
     const resumeText = req.file ? await extractResumeText(req.file) : '';
     const enrichedSkills = enrichSkillsFromSignals(appliedRole,resumeText,skills);
-    const assignment = await generateAssignmentWithAI(appliedRole,resumeText,enrichedSkills,fullName,yearsExperience);
+    const assignment = generateAssignment(detectRoleBucket(appliedRole), enrichedSkills, yearsExperience);
 
     let githubRepo = null;
     try{
@@ -261,10 +347,12 @@ app.post('/api/career-apply', upload.single('resumeFile'), async (req,res)=>{
       subject: 'SensusSoft Technical Evaluation Assignment',
       text:`Dear ${fullName},
 
-Please find attached your personalized technical assignment.
+Please find attached your personalized technical evaluation assignment document.
 
 Assigned Private GitHub Repository:
 ${candidate.githubRepoUrl}
+
+All source code commits must be maintained on the above repository.
 
 Regards,
 SensusSoft HR Team`,
