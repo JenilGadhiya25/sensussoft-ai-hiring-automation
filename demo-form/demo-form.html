@@ -1,140 +1,225 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>SensusSoft Career Application Portal</title>
+
   <style>
-    *{box-sizing:border-box;font-family:Arial,sans-serif}
-    body{
+    *{
       margin:0;
-      padding:30px;
-      background:linear-gradient(135deg,#dbeafe,#f8fafc,#e0e7ff);
+      padding:0;
+      box-sizing:border-box;
+      font-family:'Segoe UI',sans-serif;
+    }
+
+    body{
       min-height:100vh;
+      background:
+      radial-gradient(circle at top left,#dbeafe,#eef2ff,#f8fafc);
+      padding:40px 20px;
       display:flex;
       justify-content:center;
       align-items:center;
     }
+
     .card{
       width:100%;
-      max-width:760px;
-      background:rgba(255,255,255,0.95);
-      border-radius:18px;
-      box-shadow:0 10px 35px rgba(0,0,0,.12);
-      padding:35px;
+      max-width:900px;
+      background:rgba(255,255,255,0.92);
+      backdrop-filter:blur(15px);
+      border-radius:24px;
+      box-shadow:0 20px 60px rgba(37,99,235,.15);
+      padding:45px;
+      border:1px solid rgba(255,255,255,.6);
     }
+
+    .logo{
+      width:70px;
+      height:70px;
+      margin:0 auto 15px;
+      border-radius:50%;
+      background:linear-gradient(135deg,#2563eb,#1d4ed8);
+      color:white;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      font-size:28px;
+      font-weight:bold;
+      box-shadow:0 10px 25px rgba(37,99,235,.35);
+    }
+
     h1{
       text-align:center;
-      margin:0;
-      color:#1e3a8a;
-      font-size:30px;
+      font-size:32px;
+      color:#0f172a;
+      margin-bottom:8px;
     }
+
     .sub{
       text-align:center;
-      color:#555;
-      margin-top:8px;
+      color:#64748b;
       margin-bottom:25px;
       font-size:14px;
     }
+
     .itnote{
       background:#eff6ff;
-      color:#1d4ed8;
-      padding:12px;
-      border-radius:10px;
-      font-size:13px;
-      margin-bottom:20px;
       border:1px solid #bfdbfe;
+      color:#1d4ed8;
+      padding:14px;
+      border-radius:12px;
+      font-size:13px;
+      margin-bottom:30px;
+      text-align:center;
     }
+
+    form{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:22px;
+    }
+
+    .full{
+      grid-column:1/3;
+    }
+
     label{
       display:block;
-      margin-top:16px;
-      font-weight:bold;
-      color:#111827;
-    }
-    input{
-      width:100%;
-      padding:12px;
-      margin-top:7px;
-      border:1px solid #cbd5e1;
-      border-radius:10px;
+      margin-bottom:8px;
+      font-weight:600;
+      color:#1e293b;
       font-size:14px;
     }
+
+    input{
+      width:100%;
+      padding:14px 16px;
+      border-radius:14px;
+      border:1px solid #dbe2ea;
+      background:#f8fafc;
+      font-size:14px;
+      transition:.3s;
+    }
+
     input:focus{
       outline:none;
       border-color:#2563eb;
-      box-shadow:0 0 0 3px rgba(37,99,235,.15);
+      background:white;
+      box-shadow:0 0 0 4px rgba(37,99,235,.12);
     }
+
     button{
-      width:100%;
-      margin-top:24px;
-      padding:14px;
+      grid-column:1/3;
+      margin-top:8px;
+      padding:16px;
       border:none;
-      border-radius:10px;
-      background:#2563eb;
+      border-radius:14px;
+      background:linear-gradient(135deg,#2563eb,#1d4ed8);
       color:white;
-      font-size:16px;
-      font-weight:bold;
+      font-size:17px;
+      font-weight:700;
       cursor:pointer;
+      box-shadow:0 12px 25px rgba(37,99,235,.25);
       transition:.3s;
     }
-    button:hover{background:#1d4ed8}
-    button:disabled{background:#93c5fd;cursor:not-allowed}
-    .result{
-      margin-top:18px;
-      padding:14px;
-      border-radius:10px;
-      display:none;
-      font-size:14px;
-      line-height:1.5;
+
+    button:hover{
+      transform:translateY(-2px);
     }
+
+    button:disabled{
+      opacity:.7;
+      cursor:not-allowed;
+    }
+
+    .result{
+      grid-column:1/3;
+      margin-top:10px;
+      padding:15px;
+      border-radius:12px;
+      display:none;
+      line-height:1.6;
+      font-size:14px;
+      font-weight:500;
+    }
+
     .success{
       background:#dcfce7;
       color:#166534;
       border:1px solid #86efac;
     }
+
     .error{
       background:#fee2e2;
       color:#991b1b;
       border:1px solid #fca5a5;
     }
+
     .footer{
-      margin-top:18px;
+      margin-top:30px;
       text-align:center;
-      font-size:12px;
       color:#64748b;
+      font-size:12px;
+    }
+
+    @media(max-width:700px){
+      form{
+        grid-template-columns:1fr;
+      }
+      .full,button,.result{
+        grid-column:1/2;
+      }
     }
   </style>
 </head>
 <body>
 
 <div class="card">
+
+  <div class="logo">S</div>
+
   <h1>SensusSoft Career Application Portal</h1>
   <div class="sub">AI Powered Technical Candidate Screening & Assignment Engine</div>
 
   <div class="itnote">
-    Note: Currently we are accepting applications only for IT / Software / Technical positions.
+    Only IT / Software / Technical profiles are accepted in this recruitment automation portal.
   </div>
 
   <form id="careerForm">
-    <label>Full Name *</label>
-    <input id="fullName" type="text" required />
 
-    <label>Email Address *</label>
-    <input id="email" type="email" required />
+    <div>
+      <label>Full Name *</label>
+      <input id="fullName" type="text" required />
+    </div>
 
-    <label>Applied Role *</label>
-    <input id="appliedRole" type="text" placeholder="React Developer / UI UX Designer / Node Backend Developer" required />
+    <div>
+      <label>Email Address *</label>
+      <input id="email" type="email" required />
+    </div>
 
-    <label>Years of Experience *</label>
-    <input id="yearsExperience" type="number" min="0" step="0.1" required />
+    <div>
+      <label>Applied Role *</label>
+      <input id="appliedRole" type="text" placeholder="React Developer / UI UX Designer" required />
+    </div>
 
-    <label>Known Skills (comma separated) *</label>
-    <input id="skills" type="text" placeholder="React, Node.js, MongoDB, Figma" required />
+    <div>
+      <label>Years of Experience *</label>
+      <input id="yearsExperience" type="number" min="0" step="0.1" required />
+    </div>
 
-    <label>Upload Resume PDF *</label>
-    <input id="resumeFile" type="file" accept=".pdf" required />
+    <div class="full">
+      <label>Known Skills (comma separated) *</label>
+      <input id="skills" type="text" placeholder="React, Node.js, MongoDB, Figma" required />
+    </div>
+
+    <div class="full">
+      <label>Upload Resume PDF *</label>
+      <input id="resumeFile" type="file" accept=".pdf" required />
+    </div>
 
     <button id="submitBtn" type="submit">Submit Career Application</button>
+
     <div id="result" class="result"></div>
   </form>
 
@@ -188,17 +273,17 @@ form.addEventListener('submit', async (e)=>{
       json = { error: txt || 'Unknown server response' };
     }
 
-   if(resp.ok){
-  form.reset();
+    if(resp.ok){
+      form.reset();
 
-  showResult('✅ Candidate application submitted successfully. Personalized technical assignment document has been delivered to candidate email.', true);
+      showResult('✅ Candidate application submitted successfully. Personalized technical assignment document has been delivered to candidate email.', true);
 
-  setTimeout(()=>{
-    resultBox.style.display='none';
-  },4000);
+      setTimeout(()=>{
+        resultBox.style.display='none';
+      },4000);
 
-  window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-}else{
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }else{
       showResult(json.error || 'Application submission failed.', false);
     }
 
