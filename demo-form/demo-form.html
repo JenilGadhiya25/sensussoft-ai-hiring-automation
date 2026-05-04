@@ -188,11 +188,17 @@ form.addEventListener('submit', async (e)=>{
       json = { error: txt || 'Unknown server response' };
     }
 
-    if(resp.ok){
-      showResult('✅ Candidate application submitted successfully. Personalized technical assignment document has been delivered to candidate email.', true);
-      form.reset();
-      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-    }else{
+   if(resp.ok){
+  form.reset();
+
+  showResult('✅ Candidate application submitted successfully. Personalized technical assignment document has been delivered to candidate email.', true);
+
+  setTimeout(()=>{
+    resultBox.style.display='none';
+  },4000);
+
+  window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+}else{
       showResult(json.error || 'Application submission failed.', false);
     }
 
