@@ -102,7 +102,6 @@ ${assignmentRequirements.map(r => `- ${r}`).join('\n')}
 
   await safeCreateFile(username, repoName, 'README.md', readmeContent);
   await safeCreateFile(username, repoName, 'TASK.md', taskContent);
-
   await safeCreateWebhook(username, repoName);
 
   return {
@@ -111,8 +110,8 @@ ${assignmentRequirements.map(r => `- ${r}`).join('\n')}
   };
 }
 
-async function safeCreateWebhook(owner, repo){
-  try{
+async function safeCreateWebhook(owner, repo) {
+  try {
     const webhookUrl = 'https://sensussoft-ai-hiring-automation.vercel.app/api/github-submission-webhook';
 
     const resp = await fetch(`${GITHUB_API}/repos/${owner}/${repo}/hooks`, {
@@ -135,38 +134,61 @@ async function safeCreateWebhook(owner, repo){
     });
 
     const data = await resp.json();
-    console.log('GITHUB WEBHOOK CREATE =>', data);
-  }catch(err){
+    console.log('GITHUB WEBHOOK CREATE =>', data.id || data.message);
+  } catch (err) {
     console.log('WEBHOOK ERROR =>', err.message);
   }
 }
 
-async function archiveRepo(repoName){
-  try{
-    const owner = GITHUB_USER;
-    const resp = await fetch(`${GITHUB_API}/repos/${owner}/${repoName}`, {
-      method: 'PATCH',
+async function archiveRepo(repoName) {
+  if (!GITHUB_TOKEN) {
+    throw new Error('Missing GitHub token');
+  }
+
+  let owner = GITHUB_USER;
+
+  if (!owner) {
+    const verifyResp = await fetch(`${GITHUB_API}/user`, {
       headers: {
         Authorization: `Bearer ${GITHUB_TOKEN}`,
-        'Content-Type': 'application/json',
         Accept: 'application/vnd.github+json'
-      },
-      body: JSON.stringify({
-        archived: true
-      })
+      }
     });
 
-    const data = await resp.json();
-    console.log('GITHUB REPO ARCHIVED =>', data.full_name || data.message);
-  }catch(err){
-    console.log('ARCHIVE ERROR =>', err.message);
+    const verifyData = await verifyResp.json();
+
+    if (!verifyResp.ok) {
+      throw new Error('Unable to verify GitHub owner');
+    }
+
+    owner = verifyData.login;
   }
+
+  const resp = await fetch(`${GITHUB_API}/repos/${owner}/${repoName}`, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${GITHUB_TOKEN}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/vnd.github+json'
+    },
+    body: JSON.stringify({
+      archived: true
+    })
+  });
+
+  const data = await resp.json();
+
+  if (!resp.ok) {
+    throw new Error(data.message || 'Archive failed');
+  }
+
+  console.log('GITHUB REPO ARCHIVED =>', data.full_name);
 }
 
-async function safeCreateFile(owner, repo, filePath, content){
-  try{
-    await createFile({ owner, repo, path:filePath, content });
-  }catch(err){
+async function safeCreateFile(owner, repo, filePath, content) {
+  try {
+    await createFile({ owner, repo, path: filePath, content });
+  } catch (err) {
     console.log(`FAILED TO CREATE ${filePath} =>`, err.message);
   }
 }
@@ -195,7 +217,7 @@ function slugify(str) {
   return String(str).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 }
 
-function delay(ms){
+function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 

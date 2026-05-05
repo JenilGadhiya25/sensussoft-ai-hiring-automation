@@ -1,10 +1,8 @@
 const githubAutoEvaluator = require('./githubAutoEvaluator');
 const hrEvaluationMailer = require('./hrEvaluationMailer');
-const fs = require('fs');
-const path = require('path');
 const { archiveRepo } = require('../github-demo/githubService');
 
-const AUDIT_LOG_PATH = path.join('/tmp', 'submission-evaluation-log.json');
+const processedRepos = new Set();
 
 module.exports = async function githubWebhookHandler(req, res) {
   try {
@@ -22,9 +20,22 @@ module.exports = async function githubWebhookHandler(req, res) {
     const payload = req.body || {};
     const repoName = payload.repository?.name || '';
     const repoUrl = payload.repository?.html_url || '';
-    const pusherName = payload.pusher?.name || '';
+    const pusherName = payload.pusher?.name || 'Candidate';
     const commits = Array.isArray(payload.commits) ? payload.commits : [];
     const commitCount = commits.length;
+
+    if (!repoName) {
+      console.log('[Webhook] Repo name missing');
+      return res.status(200).send('Repo data missing');
+    }
+
+    // only first push process
+    if (processedRepos.has(repoName)) {
+      console.log(`[Webhook] Duplicate push ignored for ${repoName}`);
+      return res.status(200).send('Duplicate push ignored');
+    }
+
+    processedRepos.add(repoName);
 
     const changedFiles = [];
     commits.forEach(commit => {
@@ -35,7 +46,9 @@ module.exports = async function githubWebhookHandler(req, res) {
 
     const submissionTime = payload.head_commit?.timestamp || new Date().toISOString();
 
-    console.log(`[Webhook] FINAL PUSH RECEIVED FOR ${repoName}`);
+    console.log(`[Webhook] FIRST PUSH RECEIVED FOR ${repoName}`);
+    console.log(`[Webhook] Candidate => ${pusherName}`);
+    console.log(`[Webhook] Commit Count => ${commitCount}`);
 
     const evaluation = await githubAutoEvaluator({
       repoName,
@@ -46,6 +59,8 @@ module.exports = async function githubWebhookHandler(req, res) {
       submissionTime
     });
 
+    console.log(`[Webhook] Evaluation Done => ${evaluation.finalScore}`);
+
     await hrEvaluationMailer({
       candidateName: pusherName,
       repoUrl,
@@ -53,35 +68,20 @@ module.exports = async function githubWebhookHandler(req, res) {
       evaluation
     });
 
-    let logs = [];
-    if (fs.existsSync(AUDIT_LOG_PATH)) {
-      try {
-        logs = JSON.parse(fs.readFileSync(AUDIT_LOG_PATH, 'utf8'));
-      } catch {
-        logs = [];
-      }
+    console.log('[Webhook] HR Mail Sent Successfully');
+
+    try {
+      await archiveRepo(repoName);
+      console.log(`[Webhook] ${repoName} archived successfully`);
+    } catch (archiveErr) {
+      console.log('[Webhook] Archive warning =>', archiveErr.message);
     }
-
-    logs.push({
-      candidateName: pusherName,
-      repoName,
-      repoUrl,
-      submissionTime,
-      finalScore: evaluation.finalScore,
-      aiRemark: evaluation.aiRemark,
-      event: 'submission-evaluated-and-locked'
-    });
-
-    fs.writeFileSync(AUDIT_LOG_PATH, JSON.stringify(logs, null, 2));
-
-    await archiveRepo(repoName);
-
-    console.log(`[Webhook] ${repoName} ARCHIVED AFTER FIRST PUSH`);
 
     return res.status(200).send('Submission evaluated, HR notified, repository locked.');
 
   } catch (err) {
-    console.error('[Webhook Error]', err);
+    console.error('[Webhook Fatal Error]', err.message);
+    console.error(err.stack);
     return res.status(500).send('Internal server error');
   }
 };
