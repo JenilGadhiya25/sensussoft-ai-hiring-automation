@@ -11,7 +11,7 @@ async function createRepo({ fullName, role, assignmentTitle, assignmentRequireme
 
   let username = GITHUB_USER;
 
-  // STEP 1 USER VERIFY
+  // STEP 1 VERIFY USER
   const verifyResp = await fetch(`${GITHUB_API}/user`, {
     headers: {
       Authorization: `Bearer ${GITHUB_TOKEN}`,
@@ -49,7 +49,7 @@ async function createRepo({ fullName, role, assignmentTitle, assignmentRequireme
   let repoData = await repoResp.json();
   console.log('GITHUB CREATE PRIVATE =>', repoData);
 
-  // fallback public if private blocked
+  // FALLBACK PUBLIC IF PRIVATE FAIL
   if (!repoResp.ok) {
     repoResp = await fetch(`${GITHUB_API}/user/repos`, {
       method: 'POST',
@@ -76,6 +76,7 @@ async function createRepo({ fullName, role, assignmentTitle, assignmentRequireme
 
   await delay(3000);
 
+  // STEP 3 CREATE README + TASK
   const readmeContent = `# Welcome ${fullName}
 
 This repository has been assigned by SensusSoft Technologies for your technical evaluation.
@@ -107,10 +108,50 @@ ${assignmentRequirements.map(r => `- ${r}`).join('\n')}
   await safeCreateFile(username, repoName, 'README.md', readmeContent);
   await safeCreateFile(username, repoName, 'TASK.md', taskContent);
 
+  // STEP 4 AUTO WEBHOOK CREATE
+  await safeCreateWebhook(username, repoName);
+
   return {
     url: repoData.html_url,
     mock: false
   };
+}
+
+async function safeCreateWebhook(owner, repo){
+  try{
+    const webhookUrl = 'https://sensussoft-ai-hiring-automation.vercel.app/api/github-submission-webhook';
+
+    const resp = await fetch(`${GITHUB_API}/repos/${owner}/${repo}/hooks`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${GITHUB_TOKEN}`,
+        'Content-Type': 'application/json',
+        Accept: 'application/vnd.github+json'
+      },
+      body: JSON.stringify({
+        name: 'web',
+        active: true,
+        events: ['push'],
+        config: {
+          url: webhookUrl,
+          content_type: 'json',
+          insecure_ssl: '0'
+        }
+      })
+    });
+
+    const data = await resp.json();
+    console.log('GITHUB WEBHOOK CREATE =>', data);
+
+    if (!resp.ok) {
+      console.log('WEBHOOK CREATE FAILED =>', data.message || data);
+    } else {
+      console.log(`WEBHOOK ATTACHED SUCCESSFULLY TO ${repo}`);
+    }
+
+  }catch(err){
+    console.log('WEBHOOK ERROR =>', err.message);
+  }
 }
 
 async function safeCreateFile(owner, repo, filePath, content){
