@@ -65,26 +65,23 @@ function countSourceFiles(tree) {
 
 function checkDeploymentProof(readmeContent) {
   if (!readmeContent) return false;
-  return /https?:\/\/[^\s]+/i.test(readmeContent) && /(deploy|demo|live)/i.test(readmeContent);
+  return /https?:\/\/[^\s]+/i.test(readmeContent);
 }
 
 function checkScreenshots(tree) {
-  return tree.some(f =>
-    /screenshot|demo|assets/i.test(f.path) &&
-    /\.(png|jpg|jpeg|gif|webp)$/i.test(f.path)
-  );
+  return tree.some(f => /\.(png|jpg|jpeg|gif|webp)$/i.test(f.path));
 }
 
 function getScore(b) {
   let score = 0;
   score += b.readmeExists ? 10 : 0;
   score += b.taskExists ? 10 : 0;
-  score += (b.frontendExists && b.backendExists) ? 10 : 0;
-  score += b.commitCount >= 3 ? 10 : (b.commitCount > 0 ? 5 : 0);
-  score += b.frontendExists ? 15 : 0;
-  score += b.backendExists ? 15 : 0;
-  score += (b.packageJsonExists && b.srcComponentsExists && b.srcPagesExists) ? 10 : 0;
+  score += (b.frontendExists || b.backendExists) ? 15 : 0;
+  score += b.commitCount >= 1 ? 10 : 0;
+  score += b.packageJsonExists ? 10 : 0;
+  score += b.filesCount >= 3 ? 15 : 0;
   score += b.deploymentProof ? 10 : 0;
+  score += b.screenshots ? 10 : 0;
   score += b.completeness ? 10 : 0;
   return score;
 }
@@ -92,16 +89,40 @@ function getScore(b) {
 function getRemark(score) {
   if (score > 85) return 'Excellent Submission';
   if (score > 70) return 'Good Submission';
-  if (score > 50) return 'Partial Submission';
+  if (score > 50) return 'Average Submission';
   return 'Weak Submission';
+}
+
+function generatePdfReport(data) {
+  return new Promise((resolve) => {
+    const pdfPath = path.join('/tmp', `candidate-report-${Date.now()}.pdf`);
+    const doc = new PDFDocument({ margin: 40 });
+    const stream = fs.createWriteStream(pdfPath);
+
+    doc.pipe(stream);
+
+    doc.fontSize(18).text('Candidate Task Submission Evaluation Report', { align: 'center' });
+    doc.moveDown();
+    doc.fontSize(12).text(`Candidate Name: ${data.pusherName}`);
+    doc.text(`Repository Name: ${data.repoName}`);
+    doc.text(`Repository URL: ${data.repoUrl}`);
+    doc.text(`Submission Time: ${data.submissionTime}`);
+    doc.text(`Commit Count: ${data.commitCount}`);
+    doc.text(`Source Files Count: ${data.filesCount}`);
+    doc.moveDown();
+    doc.text(`Final Automated Score: ${data.finalScore}/100`);
+    doc.text(`AI Remark: ${data.aiRemark}`);
+    doc.end();
+
+    stream.on('finish', () => resolve(pdfPath));
+    stream.on('error', () => resolve(null));
+  });
 }
 
 module.exports = async function githubAutoEvaluator({
   repoName,
   repoUrl,
   pusherName,
-  commitCount,
-  changedFiles,
   submissionTime
 }) {
   try {
@@ -113,22 +134,14 @@ module.exports = async function githubAutoEvaluator({
     const readmeExists = await fetchFileExists(repoFullName, 'README.md');
     const taskExists = await fetchFileExists(repoFullName, 'TASK.md');
     const packageJsonExists = await fetchFileExists(repoFullName, 'package.json');
-
     const frontendExists = checkFolderExists(tree, 'frontend') || checkFolderExists(tree, 'src');
     const backendExists = checkFolderExists(tree, 'backend') || checkFolderExists(tree, 'server');
-    const srcComponentsExists = checkFolderExists(tree, 'src/components');
-    const srcPagesExists = checkFolderExists(tree, 'src/pages');
-
     const filesCount = countSourceFiles(tree);
     const readmeContent = await fetchReadmeContent(repoFullName);
     const deploymentProof = checkDeploymentProof(readmeContent);
     const screenshots = checkScreenshots(tree);
 
-    const completeness =
-      readmeExists &&
-      taskExists &&
-      packageJsonExists &&
-      filesCount >= 5;
+    const completeness = readmeExists && taskExists && filesCount >= 3;
 
     const breakdown = {
       readmeExists,
@@ -136,8 +149,6 @@ module.exports = async function githubAutoEvaluator({
       frontendExists,
       backendExists,
       packageJsonExists,
-      srcComponentsExists,
-      srcPagesExists,
       commitCount: commits.length,
       filesCount,
       deploymentProof,
@@ -148,57 +159,29 @@ module.exports = async function githubAutoEvaluator({
     const finalScore = getScore(breakdown);
     const aiRemark = getRemark(finalScore);
 
-    const pdfPath = path.join(__dirname, `candidate-submission-evaluation-${Date.now()}.pdf`);
-    const doc = new PDFDocument({ margin: 40 });
-    doc.pipe(fs.createWriteStream(pdfPath));
-
-    doc.fontSize(18).text('Candidate Task Submission Evaluation Report', { align: 'center' });
-    doc.moveDown();
-
-    doc.fontSize(12).text(`Candidate Name: ${pusherName}`);
-    doc.text(`Repository Name: ${repoName}`);
-    doc.text(`Repository URL: ${repoUrl}`);
-    doc.text(`Submission Time: ${submissionTime}`);
-    doc.text(`Commit Count: ${commits.length}`);
-    doc.text(`Source Files Count: ${filesCount}`);
-    doc.moveDown();
-
-    doc.fontSize(14).text('Evaluation Breakdown');
-    doc.fontSize(12).text(`README.md Exists: ${readmeExists ? 'Yes' : 'No'}`);
-    doc.text(`TASK.md Exists: ${taskExists ? 'Yes' : 'No'}`);
-    doc.text(`Frontend Present: ${frontendExists ? 'Yes' : 'No'}`);
-    doc.text(`Backend Present: ${backendExists ? 'Yes' : 'No'}`);
-    doc.text(`package.json Exists: ${packageJsonExists ? 'Yes' : 'No'}`);
-    doc.text(`src/components Exists: ${srcComponentsExists ? 'Yes' : 'No'}`);
-    doc.text(`src/pages Exists: ${srcPagesExists ? 'Yes' : 'No'}`);
-    doc.text(`Deployment Proof: ${deploymentProof ? 'Yes' : 'No'}`);
-    doc.text(`Screenshots/Assets: ${screenshots ? 'Yes' : 'No'}`);
-    doc.moveDown();
-
-    doc.fontSize(14).text(`Final Automated Score: ${finalScore}/100`);
-    doc.fontSize(13).text(`AI Remark: ${aiRemark}`);
-    doc.moveDown(2);
-    doc.text('Regards,');
-    doc.text('SensusSoft AI Evaluation Bot');
-
-    doc.end();
-
-    console.log(`[Evaluator] Completed for ${pusherName} Score=${finalScore}`);
-
-    return {
-      candidateName: pusherName,
+    const pdfPath = await generatePdfReport({
+      pusherName,
+      repoName,
       repoUrl,
       submissionTime,
       commitCount: commits.length,
       filesCount,
-      breakdown,
+      finalScore,
+      aiRemark
+    });
+
+    return {
       finalScore,
       aiRemark,
       pdfPath
     };
 
   } catch (err) {
-    console.error('[Evaluator Error]', err.message);
-    throw err;
+    console.log('[Evaluator Error]', err.message);
+    return {
+      finalScore: 0,
+      aiRemark: 'Evaluation failed',
+      pdfPath: null
+    };
   }
 };

@@ -25,11 +25,9 @@ module.exports = async function githubWebhookHandler(req, res) {
     const commitCount = commits.length;
 
     if (!repoName) {
-      console.log('[Webhook] Repo name missing');
-      return res.status(200).send('Repo data missing');
+      return res.status(200).send('Repo missing');
     }
 
-    // only first push process
     if (processedRepos.has(repoName)) {
       console.log(`[Webhook] Duplicate push ignored for ${repoName}`);
       return res.status(200).send('Duplicate push ignored');
@@ -46,42 +44,51 @@ module.exports = async function githubWebhookHandler(req, res) {
 
     const submissionTime = payload.head_commit?.timestamp || new Date().toISOString();
 
-    console.log(`[Webhook] FIRST PUSH RECEIVED FOR ${repoName}`);
-    console.log(`[Webhook] Candidate => ${pusherName}`);
-    console.log(`[Webhook] Commit Count => ${commitCount}`);
+    console.log(`[Webhook] FIRST PUSH RECEIVED => ${repoName}`);
 
-    const evaluation = await githubAutoEvaluator({
-      repoName,
-      repoUrl,
-      pusherName,
-      commitCount,
-      changedFiles,
-      submissionTime
-    });
+    let evaluation = {
+      finalScore: 0,
+      aiRemark: 'Evaluation failed',
+      pdfPath: null
+    };
 
-    console.log(`[Webhook] Evaluation Done => ${evaluation.finalScore}`);
+    try {
+      evaluation = await githubAutoEvaluator({
+        repoName,
+        repoUrl,
+        pusherName,
+        commitCount,
+        changedFiles,
+        submissionTime
+      });
+      console.log('[Webhook] Evaluation success');
+    } catch (evalErr) {
+      console.log('[Webhook] Evaluator warning =>', evalErr.message);
+    }
 
-    await hrEvaluationMailer({
-      candidateName: pusherName,
-      repoUrl,
-      commitCount,
-      evaluation
-    });
-
-    console.log('[Webhook] HR Mail Sent Successfully');
+    try {
+      await hrEvaluationMailer({
+        candidateName: pusherName,
+        repoUrl,
+        commitCount,
+        evaluation
+      });
+      console.log('[Webhook] HR mail success');
+    } catch (mailErr) {
+      console.log('[Webhook] Mail warning =>', mailErr.message);
+    }
 
     try {
       await archiveRepo(repoName);
-      console.log(`[Webhook] ${repoName} archived successfully`);
+      console.log('[Webhook] Archive success');
     } catch (archiveErr) {
       console.log('[Webhook] Archive warning =>', archiveErr.message);
     }
 
-    return res.status(200).send('Submission evaluated, HR notified, repository locked.');
+    return res.status(200).send('Submission processed successfully');
 
   } catch (err) {
     console.error('[Webhook Fatal Error]', err.message);
-    console.error(err.stack);
-    return res.status(500).send('Internal server error');
+    return res.status(200).send('Webhook recovered safely');
   }
 };
