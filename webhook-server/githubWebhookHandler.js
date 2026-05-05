@@ -26,14 +26,16 @@ module.exports = async function githubWebhookHandler(req, res) {
 
     if (!repoName) return res.status(200).send('Repo missing');
 
-    // IMPORTANT: ignore owner starter commits
+    // owner generated README/TASK commits ignore
     if (GITHUB_USER && pusherName.toLowerCase() === GITHUB_USER.toLowerCase()) {
-      console.log('[Webhook] Owner self push ignored');
+      console.log('[Webhook] Owner push ignored');
       return res.status(200).send('Owner push ignored');
     }
 
+    // only one candidate push allowed
     if (processedRepos.has(repoName)) {
-      return res.status(200).send('Duplicate push ignored');
+      console.log('[Webhook] Repo already finalized');
+      return res.status(200).send('Final submission already accepted');
     }
 
     processedRepos.add(repoName);
@@ -58,7 +60,9 @@ module.exports = async function githubWebhookHandler(req, res) {
         changedFiles,
         submissionTime
       });
-    } catch (e) {}
+    } catch (e) {
+      console.log('[Webhook] Evaluator Error =>', e.message);
+    }
 
     try {
       await hrEvaluationMailer({
@@ -67,15 +71,21 @@ module.exports = async function githubWebhookHandler(req, res) {
         commitCount,
         evaluation
       });
-    } catch (e) {}
+    } catch (e) {
+      console.log('[Webhook] HR Mail Error =>', e.message);
+    }
 
     try {
       await archiveRepo(repoName);
-    } catch (e) {}
+    } catch (e) {
+      console.log('[Webhook] Archive Error =>', e.message);
+    }
 
-    return res.status(200).send('Candidate submission processed');
+    console.log('[Webhook] FIRST CANDIDATE PUSH ACCEPTED -> REPO LOCKED');
+    return res.status(200).send('Final submission accepted and repository locked');
 
   } catch (err) {
+    console.log('[Webhook Fatal]', err.message);
     return res.status(200).send('Webhook safe recovered');
   }
 };

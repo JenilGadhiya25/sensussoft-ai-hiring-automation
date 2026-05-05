@@ -6,6 +6,7 @@ const normalfs = require('fs');
 const path = require('path');
 const PDFDocument = require('pdfkit');
 const nodemailer = require('nodemailer');
+const fetch = require('node-fetch');
 const { createRepo } = require('../github-demo/githubService');
 const githubWebhookHandler = require('./githubWebhookHandler');
 
@@ -15,6 +16,7 @@ const PORT = process.env.PORT || 4000;
 const AUDIT_LOG_PATH = process.env.AUDIT_LOG_PATH || path.join('/tmp', 'candidate-log.json');
 const SMTP_EMAIL = process.env.SMTP_EMAIL;
 const SMTP_PASS = process.env.SMTP_PASS;
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
 const TECH_ROLE_KEYWORDS = [
   'developer','engineer','software','web','frontend','backend','full stack',
@@ -50,78 +52,82 @@ const transporter = nodemailer.createTransport({
   auth:{ user:SMTP_EMAIL, pass:SMTP_PASS }
 });
 
-function detectRoleBucket(role){
-  const r = role.toLowerCase();
-  if(r.includes('frontend') || r.includes('react')) return 'frontend';
-  if(r.includes('backend') || r.includes('node')) return 'backend';
-  if(r.includes('ui') || r.includes('ux') || r.includes('design')) return 'uiux';
-  return 'fullstack';
+async function generateAIAssignment(appliedRole, skills, yearsExperience){
+  try{
+    const prompt = `
+You are an enterprise technical hiring manager.
+
+Generate a UNIQUE personalized software development technical assignment for a candidate.
+
+Candidate Role: ${appliedRole}
+Candidate Skills: ${skills.join(', ')}
+Candidate Experience: ${yearsExperience} years
+
+Requirements:
+1. Generate a realistic enterprise-level project title.
+2. Generate 10 detailed functional modules.
+3. Generate recommended technology stack.
+4. Generate 5 evaluation criteria.
+5. Timeline should be 3 Working Days.
+6. Assignment should be different, professional and implementation heavy.
+7. Return ONLY valid JSON in this format:
+
+{
+ "projectTitle":"",
+ "functionalModules":[],
+ "recommendedStack":[],
+ "evaluationCriteria":[],
+ "timeline":"3 Working Days"
 }
+`;
 
-function enrichSkillsFromSignals(role,resumeText,skills){
-  const set = new Set(skills.map(s=>s.trim()));
-  const combined = `${role} ${resumeText}`.toLowerCase();
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions',{
+      method:'POST',
+      headers:{
+        'Authorization':`Bearer ${OPENROUTER_API_KEY}`,
+        'Content-Type':'application/json'
+      },
+      body:JSON.stringify({
+        model:'openai/gpt-4o-mini',
+        messages:[{ role:'user', content:prompt }],
+        temperature:0.9
+      })
+    });
 
-  if(combined.includes('react')) set.add('React');
-  if(combined.includes('node')) set.add('Node.js');
-  if(combined.includes('mongo')) set.add('MongoDB');
-  if(combined.includes('javascript')) set.add('JavaScript');
-  if(combined.includes('figma')) set.add('Figma');
+    const data = await response.json();
+    const raw = data.choices?.[0]?.message?.content || '';
 
-  return Array.from(set);
-}
+    const clean = raw.replace(/```json/g,'').replace(/```/g,'').trim();
+    return JSON.parse(clean);
 
-function generateAssignment(bucket, skills){
-  let title = '';
-  let modules = [];
+  }catch(err){
+    console.log('AI Assignment Fallback =>', err.message);
 
-  if(bucket === 'frontend'){
-    title = 'Professional Responsive Admin Dashboard Frontend Development';
-    modules = [
-      'JWT Login UI',
-      'Dashboard KPI Cards',
-      'Reusable Sidebar/Navbar',
-      'Search Sort Pagination Table',
-      'Notification Drawer',
-      'Responsive Mobile UI'
-    ];
-  }else if(bucket === 'backend'){
-    title = 'Enterprise REST API Candidate Management Backend System';
-    modules = [
-      'Secure Login API',
-      'Candidate CRUD APIs',
-      'Resume Upload Endpoint',
-      'JWT Authentication',
-      'Admin Audit Logs',
-      'Deployment Ready Backend'
-    ];
-  }else if(bucket === 'uiux'){
-    title = 'Modern SaaS Recruitment Portal UI UX Design System';
-    modules = [
-      'Login Screen Design',
-      'Dashboard UX Flow',
-      'Candidate Profile Page',
-      'Application Tracking Flow',
-      'Mobile Responsive Design',
-      'Prototype Submission'
-    ];
-  }else{
-    title = 'Junior Complete Business Automation SaaS Hiring Automation Platform';
-    modules = [
-      'Candidate Application Portal',
-      'Resume Upload Workflow',
-      'Secure Admin Dashboard',
-      'Assignment Generator Panel',
-      'Analytics Reports',
-      'Live Deployment'
-    ];
+    return {
+      projectTitle:'Enterprise Full Stack Recruitment Management SaaS Platform',
+      functionalModules:[
+        'Secure Admin Authentication System',
+        'Candidate Application Form With Resume Upload',
+        'Candidate Tracking Dashboard',
+        'Assignment Generation Panel',
+        'Technical Review Management',
+        'Search Filter Pagination Data Tables',
+        'Analytics KPI Reporting',
+        'Email Notification Workflow',
+        'Responsive Mobile Interface',
+        'Deployment With Production Documentation'
+      ],
+      recommendedStack:['React','Node.js','Express','MongoDB','JWT','CSS','REST API'],
+      evaluationCriteria:[
+        'Project Architecture',
+        'Code Quality',
+        'UI/UX Responsiveness',
+        'Deployment Completeness',
+        'Documentation Quality'
+      ],
+      timeline:'3 Working Days'
+    };
   }
-
-  return {
-    projectTitle:title,
-    functionalModules:modules,
-    timeline:'3 Working Days'
-  };
 }
 
 async function extractResumeText(file){
@@ -139,9 +145,7 @@ async function writeAuditLog(entry){
     if(normalfs.existsSync(AUDIT_LOG_PATH)){
       try{
         logs = JSON.parse(await fs.readFile(AUDIT_LOG_PATH,'utf8'));
-      }catch(e){
-        logs = [];
-      }
+      }catch(e){ logs = []; }
     }
     logs.push(entry);
     await fs.writeFile(AUDIT_LOG_PATH, JSON.stringify(logs,null,2));
@@ -159,37 +163,43 @@ async function generateAssignmentPDF(candidate){
       doc.pipe(stream);
 
       doc.fontSize(18).text('SensusSoft Technologies Pvt. Ltd.', {align:'center'});
-      doc.fontSize(15).text('Candidate Personalized Technical Evaluation Assignment', {align:'center'});
+      doc.fontSize(15).text('Personalized Technical Assignment Documentation', {align:'center'});
       doc.moveDown();
 
       doc.fontSize(12).text(`Candidate Name: ${candidate.fullName}`);
       doc.text(`Applied Role: ${candidate.appliedRole}`);
-      doc.text(`HR Screening Score: ${candidate.hrScore}/100`);
-      doc.text(`Deadline: ${candidate.assignment.timeline}`);
+      doc.text(`Experience: ${candidate.yearsExperience} Years`);
+      doc.text(`Screening Score: ${candidate.hrScore}/100`);
+      doc.text(`Submission Deadline: ${candidate.assignment.timeline}`);
       doc.text(`Private GitHub Repository: ${candidate.githubRepoUrl}`);
       doc.moveDown();
 
-      doc.fontSize(14).text('1. Assigned Project Title');
+      doc.fontSize(14).text('1. Assigned Enterprise Project');
       doc.fontSize(12).text(candidate.assignment.projectTitle);
       doc.moveDown();
 
-      doc.fontSize(14).text('2. Functional Modules');
+      doc.fontSize(14).text('2. Functional Development Modules');
       candidate.assignment.functionalModules.forEach((m,i)=>doc.text(`${i+1}. ${m}`));
       doc.moveDown();
 
-      doc.fontSize(14).text('3. Recommended Stack');
-      candidate.skills.forEach((s,i)=>doc.text(`${i+1}. ${s}`));
+      doc.fontSize(14).text('3. Recommended Technology Stack');
+      candidate.assignment.recommendedStack.forEach((s,i)=>doc.text(`${i+1}. ${s}`));
       doc.moveDown();
 
-      doc.fontSize(13).text('Submission Workflow');
-      doc.text('1. Clone assigned GitHub repository locally');
-      doc.text('2. Complete the task on your machine');
-      doc.text('3. Push only one final completed submission');
-      doc.text('4. Repository will auto lock after first final push');
+      doc.fontSize(14).text('4. Evaluation Criteria');
+      candidate.assignment.evaluationCriteria.forEach((e,i)=>doc.text(`${i+1}. ${e}`));
+      doc.moveDown();
+
+      doc.fontSize(14).text('5. Mandatory Submission Workflow');
+      doc.text('1. Clone assigned private GitHub repository');
+      doc.text('2. Complete full project on your local machine');
+      doc.text('3. Push only one final submission to GitHub');
+      doc.text('4. After first push repository will be locked permanently');
+      doc.text('5. Include proper README and deployment proof');
       doc.moveDown();
 
       doc.text('Regards,');
-      doc.text('SensusSoft HR & Technical Recruitment Team');
+      doc.text('SensusSoft HR & Engineering Recruitment Team');
 
       doc.end();
       stream.on('finish', ()=>resolve(pdfPath));
@@ -235,8 +245,9 @@ app.post('/api/career-apply', upload.single('resumeFile'), async (req,res)=>{
     }
 
     const resumeText = req.file ? await extractResumeText(req.file) : '';
-    const enrichedSkills = enrichSkillsFromSignals(appliedRole,resumeText,skills);
-    const assignment = generateAssignment(detectRoleBucket(appliedRole), enrichedSkills);
+    const enrichedSkills = [...new Set([...skills, resumeText].filter(Boolean))];
+
+    const assignment = await generateAIAssignment(appliedRole, enrichedSkills, yearsExperience);
 
     let githubRepo = null;
     try{
@@ -255,7 +266,7 @@ app.post('/api/career-apply', upload.single('resumeFile'), async (req,res)=>{
       email,
       appliedRole,
       yearsExperience,
-      skills: enrichedSkills,
+      skills: assignment.recommendedStack,
       hrScore: Math.min(98,75+(yearsExperience*3)+(enrichedSkills.length*2)),
       assignment,
       githubRepoUrl: githubRepo ? githubRepo.url : 'Repository generation pending'
@@ -271,18 +282,15 @@ app.post('/api/career-apply', upload.single('resumeFile'), async (req,res)=>{
       subject: 'SensusSoft Personalized Technical Evaluation Assignment',
       text:`Dear ${fullName},
 
-Your personalized technical assignment has been successfully generated.
+Your personalized enterprise technical assignment has been generated.
 
 Assigned Private GitHub Repository:
 ${candidate.githubRepoUrl}
 
-IMPORTANT WORKFLOW:
-1. Clone this repository to your local machine
-2. Complete the assigned task locally
-3. Push only one final completed submission
-4. Repository will be locked automatically after first candidate push
+Please check attached professional assignment document.
 
-Detailed task instructions are attached in PDF.
+IMPORTANT:
+Push only one final completed submission to GitHub.
 
 Regards,
 SensusSoft HR Team`,
@@ -292,7 +300,6 @@ SensusSoft HR Team`,
     await writeAuditLog({
       submittedAt:new Date().toISOString(),
       fullName,email,appliedRole,yearsExperience,
-      skills:enrichedSkills,
       githubRepoUrl:candidate.githubRepoUrl,
       assignmentTitle:assignment.projectTitle
     });
