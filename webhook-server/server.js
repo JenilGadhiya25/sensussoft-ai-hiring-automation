@@ -13,7 +13,7 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 const IS_VERCEL = !!process.env.VERCEL;
 
-const AUDIT_LOG_PATH = process.env.AUDIT_LOG_PATH || path.join(__dirname, '..', 'audit-logs', 'candidate-log.json');
+const AUDIT_LOG_PATH = process.env.AUDIT_LOG_PATH || path.join('/tmp', 'candidate-log.json');
 const SMTP_EMAIL = process.env.SMTP_EMAIL;
 const SMTP_PASS = process.env.SMTP_PASS;
 
@@ -34,7 +34,7 @@ const TECH_SKILL_KEYWORDS = [
   'c++','c#','full stack'
 ];
 
-app.use(express.json());
+app.use(express.json({ limit:'10mb' }));
 app.use(express.urlencoded({ extended:true }));
 app.use((req,res,next)=>{
   res.setHeader('Access-Control-Allow-Origin','*');
@@ -44,23 +44,154 @@ app.use((req,res,next)=>{
   next();
 });
 
-const upload = multer({ dest: IS_VERCEL ? '/tmp' : path.join(__dirname,'uploads/') });
+const upload = multer({ dest: '/tmp' });
 
 const transporter = nodemailer.createTransport({
   service:'gmail',
   auth:{ user:SMTP_EMAIL, pass:SMTP_PASS }
 });
 
-/* KEEP ALL YOUR EXISTING FUNCTIONS HERE:
-detectRoleBucket
-enrichSkillsFromSignals
-generateAssignment
-extractResumeText
-writeAuditLog
-generateAssignmentPDF
-(aa badha same rehse je apde banavya)
-*/
+function detectRoleBucket(role){
+  const r = role.toLowerCase();
+  if(r.includes('frontend') || r.includes('react')) return 'frontend';
+  if(r.includes('backend') || r.includes('node')) return 'backend';
+  if(r.includes('ui') || r.includes('ux') || r.includes('design')) return 'uiux';
+  return 'fullstack';
+}
 
+function enrichSkillsFromSignals(role,resumeText,skills){
+  const set = new Set(skills.map(s=>s.trim()));
+  const combined = `${role} ${resumeText}`.toLowerCase();
+
+  if(combined.includes('react')) set.add('React');
+  if(combined.includes('node')) set.add('Node.js');
+  if(combined.includes('mongo')) set.add('MongoDB');
+  if(combined.includes('figma')) set.add('Figma');
+  if(combined.includes('javascript')) set.add('JavaScript');
+
+  return Array.from(set);
+}
+
+function generateAssignment(bucket, skills, exp){
+  let title = '';
+  let modules = [];
+
+  if(bucket === 'frontend'){
+    title = 'Professional Responsive Admin Dashboard Frontend Development';
+    modules = [
+      'JWT Login UI',
+      'Dashboard KPI Cards',
+      'Reusable Sidebar/Navbar',
+      'Search Sort Pagination Table',
+      'Notification Drawer',
+      'Responsive Mobile UI'
+    ];
+  }else if(bucket === 'backend'){
+    title = 'Enterprise REST API Candidate Management Backend System';
+    modules = [
+      'Secure Login API',
+      'Candidate CRUD APIs',
+      'Resume Upload Endpoint',
+      'JWT Authentication',
+      'Admin Audit Logs',
+      'Deployment Ready Backend'
+    ];
+  }else if(bucket === 'uiux'){
+    title = 'Modern SaaS Recruitment Portal UI UX Design System';
+    modules = [
+      'Login Screen Design',
+      'Dashboard UX Flow',
+      'Candidate Profile Page',
+      'Application Tracking Flow',
+      'Mobile Responsive Design',
+      'Prototype Submission'
+    ];
+  }else{
+    title = 'Junior Complete Business Automation SaaS Hiring Automation Platform';
+    modules = [
+      'Candidate Application Portal',
+      'Resume Upload Workflow',
+      'Secure Admin Dashboard',
+      'Assignment Generator Panel',
+      'Analytics Reports',
+      'Live Deployment'
+    ];
+  }
+
+  return {
+    projectTitle:title,
+    functionalModules:modules,
+    timeline:'3 Working Days'
+  };
+}
+
+async function extractResumeText(file){
+  try{
+    if(!file) return '';
+    return `Resume uploaded: ${file.originalname || 'candidate_resume.pdf'}`;
+  }catch(err){
+    console.log('Resume parse failed =>', err.message);
+    return '';
+  }
+}
+
+async function writeAuditLog(entry){
+  try{
+    let logs = [];
+    if(normalfs.existsSync(AUDIT_LOG_PATH)){
+      try{
+        logs = JSON.parse(await fs.readFile(AUDIT_LOG_PATH,'utf8'));
+      }catch(e){
+        logs = [];
+      }
+    }
+    logs.push(entry);
+    await fs.writeFile(AUDIT_LOG_PATH, JSON.stringify(logs,null,2));
+  }catch(err){
+    console.log('Audit log failed =>', err.message);
+  }
+}
+
+async function generateAssignmentPDF(candidate){
+  return new Promise((resolve,reject)=>{
+    try{
+      const pdfPath = path.join('/tmp', `assignment-${Date.now()}.pdf`);
+      const doc = new PDFDocument({ margin:40 });
+      doc.pipe(normalfs.createWriteStream(pdfPath));
+
+      doc.fontSize(18).text('SensusSoft Technologies Pvt. Ltd.', {align:'center'});
+      doc.fontSize(15).text('Candidate Personalized Technical Evaluation Assignment', {align:'center'});
+      doc.moveDown();
+
+      doc.fontSize(12).text(`Candidate Name: ${candidate.fullName}`);
+      doc.text(`Applied Role: ${candidate.appliedRole}`);
+      doc.text(`HR Screening Score: ${candidate.hrScore}/100`);
+      doc.text(`Deadline: ${candidate.assignment.timeline}`);
+      doc.text(`Private GitHub Repository: ${candidate.githubRepoUrl}`);
+      doc.moveDown();
+
+      doc.fontSize(14).text('1. Assigned Project Title');
+      doc.fontSize(12).text(candidate.assignment.projectTitle);
+      doc.moveDown();
+
+      doc.fontSize(14).text('2. Functional Modules');
+      candidate.assignment.functionalModules.forEach((m,i)=>doc.text(`${i+1}. ${m}`));
+      doc.moveDown();
+
+      doc.fontSize(14).text('3. Recommended Stack');
+      candidate.skills.forEach((s,i)=>doc.text(`${i+1}. ${s}`));
+      doc.moveDown();
+
+      doc.text('Regards,');
+      doc.text('SensusSoft HR & Technical Recruitment Team');
+
+      doc.end();
+      doc.on('finish', ()=>resolve(pdfPath));
+    }catch(err){
+      reject(err);
+    }
+  });
+}
 
 app.post('/api/career-apply', upload.single('resumeFile'), async (req,res)=>{
   try{
@@ -119,18 +250,12 @@ app.post('/api/career-apply', upload.single('resumeFile'), async (req,res)=>{
       subject: 'SensusSoft Personalized Technical Evaluation Assignment',
       text:`Dear ${fullName},
 
-Congratulations.
-
-Based on initial HR technical screening, your profile has been shortlisted for the next technical evaluation round.
-
-Please find attached your personalized technical assignment document.
+Please find attached your personalized technical assignment.
 
 Assigned Private GitHub Repository:
 ${candidate.githubRepoUrl}
 
-Important:
-- All source code must be pushed only on the assigned repository
-- Final submission timeline is ${candidate.assignment.timeline}
+All source code must be pushed only on this assigned repository.
 
 Regards,
 SensusSoft HR Team`,
@@ -157,10 +282,6 @@ SensusSoft HR Team`,
   }
 });
 
-
-/* NEW GITHUB WEBHOOK ROUTE */
-app.use(express.json({ limit:'10mb' }));
-app.use(express.urlencoded({ extended:true }));
 app.post('/api/github-submission-webhook', githubWebhookHandler);
 
 app.get('/',(_,res)=>res.send('SensusSoft Enterprise AI Hiring Backend Running'));
