@@ -55,10 +55,10 @@ This repository has been assigned by SensusSoft Technologies for your technical 
 ${role}
 
 ## Important Instructions
-- Clone this repository to your local machine
-- Complete the technical assignment
+- Clone this repository locally
+- Complete your assigned task
 - Push source code only once as final submission
-- After first final push repository will be locked automatically
+- After first GitHub push repository will be permanently locked
 
 Regards,
 SensusSoft HR Team`;
@@ -71,13 +71,11 @@ ${assignmentRequirements.map(r => `- ${r}`).join('\n')}
 ## Submission Rules
 - Complete project locally
 - Push only one final submission
-- Repository auto archive after first candidate push
+- Repository permanently locked after first candidate push
 - Add deployment link and README`;
 
   await safeCreateFile(username, repoName, 'README.md', readmeContent);
   await safeCreateFile(username, repoName, 'TASK.md', taskContent);
-
-  // webhook create AFTER starter files
   await safeCreateWebhook(username, repoName);
 
   return {
@@ -113,7 +111,7 @@ async function safeCreateWebhook(owner, repo) {
   }
 }
 
-async function archiveRepo(repoName) {
+async function lockRepoAfterSubmission(repoName) {
   let owner = GITHUB_USER;
 
   if (!owner) {
@@ -127,7 +125,8 @@ async function archiveRepo(repoName) {
     owner = verifyData.login;
   }
 
-  const resp = await fetch(`${GITHUB_API}/repos/${owner}/${repoName}`, {
+  // step 1 archive repo
+  await fetch(`${GITHUB_API}/repos/${owner}/${repoName}`, {
     method: 'PATCH',
     headers: {
       Authorization: `Bearer ${GITHUB_TOKEN}`,
@@ -137,8 +136,25 @@ async function archiveRepo(repoName) {
     body: JSON.stringify({ archived: true })
   });
 
-  const data = await resp.json();
-  if (!resp.ok) throw new Error(data.message || 'Archive failed');
+  // step 2 protect main branch
+  await fetch(`${GITHUB_API}/repos/${owner}/${repoName}/branches/main/protection`, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${GITHUB_TOKEN}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/vnd.github+json'
+    },
+    body: JSON.stringify({
+      required_status_checks: null,
+      enforce_admins: true,
+      required_pull_request_reviews: null,
+      restrictions: null,
+      allow_force_pushes: false,
+      allow_deletions: false
+    })
+  });
+
+  console.log(`REPO ${repoName} PERMANENTLY LOCKED`);
 }
 
 async function safeCreateFile(owner, repo, filePath, content) {
@@ -177,4 +193,4 @@ function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-module.exports = { createRepo, archiveRepo };
+module.exports = { createRepo, lockRepoAfterSubmission };

@@ -1,6 +1,6 @@
 const githubAutoEvaluator = require('./githubAutoEvaluator');
 const hrEvaluationMailer = require('./hrEvaluationMailer');
-const { archiveRepo } = require('../github-demo/githubService');
+const { lockRepoAfterSubmission } = require('../github-demo/githubService');
 
 const processedRepos = new Set();
 const GITHUB_USER = process.env.GITHUB_USER || '';
@@ -24,17 +24,19 @@ module.exports = async function githubWebhookHandler(req, res) {
     const commits = Array.isArray(payload.commits) ? payload.commits : [];
     const commitCount = commits.length;
 
-    if (!repoName) return res.status(200).send('Repo missing');
+    if (!repoName) {
+      return res.status(200).send('Repo missing');
+    }
 
-    // owner generated README/TASK commits ignore
+    // Ignore owner automatic starter commits
     if (GITHUB_USER && pusherName.toLowerCase() === GITHUB_USER.toLowerCase()) {
-      console.log('[Webhook] Owner push ignored');
+      console.log('[Webhook] Owner starter push ignored');
       return res.status(200).send('Owner push ignored');
     }
 
-    // only one candidate push allowed
+    // Allow only one candidate push lifetime
     if (processedRepos.has(repoName)) {
-      console.log('[Webhook] Repo already finalized');
+      console.log('[Webhook] Repo already permanently finalized');
       return res.status(200).send('Final submission already accepted');
     }
 
@@ -49,7 +51,11 @@ module.exports = async function githubWebhookHandler(req, res) {
 
     const submissionTime = payload.head_commit?.timestamp || new Date().toISOString();
 
-    let evaluation = { finalScore: 0, aiRemark: 'Evaluation failed', pdfPath: null };
+    let evaluation = {
+      finalScore: 0,
+      aiRemark: 'Evaluation failed',
+      pdfPath: null
+    };
 
     try {
       evaluation = await githubAutoEvaluator({
@@ -60,6 +66,7 @@ module.exports = async function githubWebhookHandler(req, res) {
         changedFiles,
         submissionTime
       });
+      console.log('[Webhook] Evaluation completed');
     } catch (e) {
       console.log('[Webhook] Evaluator Error =>', e.message);
     }
@@ -71,18 +78,20 @@ module.exports = async function githubWebhookHandler(req, res) {
         commitCount,
         evaluation
       });
+      console.log('[Webhook] HR mail sent');
     } catch (e) {
       console.log('[Webhook] HR Mail Error =>', e.message);
     }
 
     try {
-      await archiveRepo(repoName);
+      await lockRepoAfterSubmission(repoName);
+      console.log('[Webhook] Repository permanent lock applied');
     } catch (e) {
-      console.log('[Webhook] Archive Error =>', e.message);
+      console.log('[Webhook] Permanent Lock Error =>', e.message);
     }
 
-    console.log('[Webhook] FIRST CANDIDATE PUSH ACCEPTED -> REPO LOCKED');
-    return res.status(200).send('Final submission accepted and repository locked');
+    console.log('[Webhook] FIRST CANDIDATE PUSH ACCEPTED -> REPOSITORY FROZEN FOREVER');
+    return res.status(200).send('Final submission accepted and repository permanently locked');
 
   } catch (err) {
     console.log('[Webhook Fatal]', err.message);
