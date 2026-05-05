@@ -88,7 +88,7 @@ Requirements:
         'Content-Type':'application/json'
       },
       body:JSON.stringify({
-        model:'openai/gpt-4o-mini',
+       model:'anthropic/claude-3.5-sonnet',
         messages:[{ role:'user', content:prompt }],
         temperature:0.9
       })
