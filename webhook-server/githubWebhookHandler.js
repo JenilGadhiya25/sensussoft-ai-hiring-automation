@@ -3,13 +3,13 @@ const hrEvaluationMailer = require('./hrEvaluationMailer');
 const { archiveRepo } = require('../github-demo/githubService');
 
 const processedRepos = new Set();
+const GITHUB_USER = process.env.GITHUB_USER || '';
 
 module.exports = async function githubWebhookHandler(req, res) {
   try {
     const eventType = req.headers['x-github-event'];
 
     if (eventType === 'ping') {
-      console.log('[Webhook] GitHub ping received successfully');
       return res.status(200).send('GitHub webhook ping success');
     }
 
@@ -24,12 +24,15 @@ module.exports = async function githubWebhookHandler(req, res) {
     const commits = Array.isArray(payload.commits) ? payload.commits : [];
     const commitCount = commits.length;
 
-    if (!repoName) {
-      return res.status(200).send('Repo missing');
+    if (!repoName) return res.status(200).send('Repo missing');
+
+    // IMPORTANT: ignore owner starter commits
+    if (GITHUB_USER && pusherName.toLowerCase() === GITHUB_USER.toLowerCase()) {
+      console.log('[Webhook] Owner self push ignored');
+      return res.status(200).send('Owner push ignored');
     }
 
     if (processedRepos.has(repoName)) {
-      console.log(`[Webhook] Duplicate push ignored for ${repoName}`);
       return res.status(200).send('Duplicate push ignored');
     }
 
@@ -44,13 +47,7 @@ module.exports = async function githubWebhookHandler(req, res) {
 
     const submissionTime = payload.head_commit?.timestamp || new Date().toISOString();
 
-    console.log(`[Webhook] FIRST PUSH RECEIVED => ${repoName}`);
-
-    let evaluation = {
-      finalScore: 0,
-      aiRemark: 'Evaluation failed',
-      pdfPath: null
-    };
+    let evaluation = { finalScore: 0, aiRemark: 'Evaluation failed', pdfPath: null };
 
     try {
       evaluation = await githubAutoEvaluator({
@@ -61,10 +58,7 @@ module.exports = async function githubWebhookHandler(req, res) {
         changedFiles,
         submissionTime
       });
-      console.log('[Webhook] Evaluation success');
-    } catch (evalErr) {
-      console.log('[Webhook] Evaluator warning =>', evalErr.message);
-    }
+    } catch (e) {}
 
     try {
       await hrEvaluationMailer({
@@ -73,22 +67,15 @@ module.exports = async function githubWebhookHandler(req, res) {
         commitCount,
         evaluation
       });
-      console.log('[Webhook] HR mail success');
-    } catch (mailErr) {
-      console.log('[Webhook] Mail warning =>', mailErr.message);
-    }
+    } catch (e) {}
 
     try {
       await archiveRepo(repoName);
-      console.log('[Webhook] Archive success');
-    } catch (archiveErr) {
-      console.log('[Webhook] Archive warning =>', archiveErr.message);
-    }
+    } catch (e) {}
 
-    return res.status(200).send('Submission processed successfully');
+    return res.status(200).send('Candidate submission processed');
 
   } catch (err) {
-    console.error('[Webhook Fatal Error]', err.message);
-    return res.status(200).send('Webhook recovered safely');
+    return res.status(200).send('Webhook safe recovered');
   }
 };

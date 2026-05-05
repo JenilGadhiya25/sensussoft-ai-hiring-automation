@@ -71,7 +71,7 @@ function enrichSkillsFromSignals(role,resumeText,skills){
   return Array.from(set);
 }
 
-function generateAssignment(bucket, skills, exp){
+function generateAssignment(bucket, skills){
   let title = '';
   let modules = [];
 
@@ -129,7 +129,6 @@ async function extractResumeText(file){
     if(!file) return '';
     return `Resume uploaded: ${file.originalname || 'candidate_resume.pdf'}`;
   }catch(err){
-    console.log('Resume parse failed =>', err.message);
     return '';
   }
 }
@@ -182,6 +181,13 @@ async function generateAssignmentPDF(candidate){
       candidate.skills.forEach((s,i)=>doc.text(`${i+1}. ${s}`));
       doc.moveDown();
 
+      doc.fontSize(13).text('Submission Workflow');
+      doc.text('1. Clone assigned GitHub repository locally');
+      doc.text('2. Complete the task on your machine');
+      doc.text('3. Push only one final completed submission');
+      doc.text('4. Repository will auto lock after first final push');
+      doc.moveDown();
+
       doc.text('Regards,');
       doc.text('SensusSoft HR & Technical Recruitment Team');
 
@@ -208,8 +214,6 @@ async function safeSendMail(options){
 
 app.post('/api/career-apply', upload.single('resumeFile'), async (req,res)=>{
   try{
-    console.log('STEP 1 REQUEST RECEIVED');
-
     const body = req.body || {};
     const fullName = String(body.fullName || '').trim();
     const email = String(body.email || '').trim();
@@ -231,12 +235,9 @@ app.post('/api/career-apply', upload.single('resumeFile'), async (req,res)=>{
     }
 
     const resumeText = req.file ? await extractResumeText(req.file) : '';
-    console.log('STEP 2 RESUME DONE');
-
     const enrichedSkills = enrichSkillsFromSignals(appliedRole,resumeText,skills);
-    const assignment = generateAssignment(detectRoleBucket(appliedRole), enrichedSkills, yearsExperience);
+    const assignment = generateAssignment(detectRoleBucket(appliedRole), enrichedSkills);
 
-    console.log('STEP 3 BEFORE GITHUB');
     let githubRepo = null;
     try{
       githubRepo = await createRepo({
@@ -248,7 +249,6 @@ app.post('/api/career-apply', upload.single('resumeFile'), async (req,res)=>{
     }catch(err){
       console.log('GitHub Repo Create Failed =>', err.message);
     }
-    console.log('STEP 4 AFTER GITHUB');
 
     const candidate = {
       fullName,
@@ -261,8 +261,9 @@ app.post('/api/career-apply', upload.single('resumeFile'), async (req,res)=>{
       githubRepoUrl: githubRepo ? githubRepo.url : 'Repository generation pending'
     };
 
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
     const pdfFile = await generateAssignmentPDF(candidate);
-    console.log('STEP 5 PDF DONE');
 
     await safeSendMail({
       from: SMTP_EMAIL,
@@ -270,19 +271,23 @@ app.post('/api/career-apply', upload.single('resumeFile'), async (req,res)=>{
       subject: 'SensusSoft Personalized Technical Evaluation Assignment',
       text:`Dear ${fullName},
 
-Please find attached your personalized technical assignment.
+Your personalized technical assignment has been successfully generated.
 
 Assigned Private GitHub Repository:
 ${candidate.githubRepoUrl}
 
-All source code must be pushed only on this assigned repository.
+IMPORTANT WORKFLOW:
+1. Clone this repository to your local machine
+2. Complete the assigned task locally
+3. Push only one final completed submission
+4. Repository will be locked automatically after first candidate push
+
+Detailed task instructions are attached in PDF.
 
 Regards,
 SensusSoft HR Team`,
       attachments:[{ filename:`Technical_Assignment_${fullName}.pdf`, path:pdfFile }]
     });
-
-    console.log('STEP 6 MAIL ATTEMPT DONE');
 
     await writeAuditLog({
       submittedAt:new Date().toISOString(),
@@ -291,8 +296,6 @@ SensusSoft HR Team`,
       githubRepoUrl:candidate.githubRepoUrl,
       assignmentTitle:assignment.projectTitle
     });
-
-    console.log('STEP 7 RESPONSE SEND');
 
     return res.status(201).json({
       success:true,

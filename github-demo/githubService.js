@@ -5,9 +5,7 @@ const GITHUB_API = 'https://api.github.com';
 const GITHUB_USER = process.env.GITHUB_USER || null;
 
 async function createRepo({ fullName, role, assignmentTitle, assignmentRequirements }) {
-  if (!GITHUB_TOKEN) {
-    throw new Error('Missing GITHUB_TOKEN in environment');
-  }
+  if (!GITHUB_TOKEN) throw new Error('Missing GITHUB_TOKEN in environment');
 
   let username = GITHUB_USER;
 
@@ -19,8 +17,6 @@ async function createRepo({ fullName, role, assignmentTitle, assignmentRequireme
   });
 
   const verifyData = await verifyResp.json();
-  console.log('GITHUB VERIFY USER =>', verifyData);
-
   if (!verifyResp.ok) {
     throw new Error('GitHub token invalid: ' + (verifyData.message || JSON.stringify(verifyData)));
   }
@@ -29,7 +25,7 @@ async function createRepo({ fullName, role, assignmentTitle, assignmentRequireme
 
   const repoName = `${slugify(fullName)}-${slugify(role)}-${Date.now()}-demo-task`;
 
-  let repoResp = await fetch(`${GITHUB_API}/user/repos`, {
+  const repoResp = await fetch(`${GITHUB_API}/user/repos`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${GITHUB_TOKEN}`,
@@ -44,34 +40,12 @@ async function createRepo({ fullName, role, assignmentTitle, assignmentRequireme
     })
   });
 
-  let repoData = await repoResp.json();
-  console.log('GITHUB CREATE PRIVATE =>', repoData);
-
-  if (!repoResp.ok) {
-    repoResp = await fetch(`${GITHUB_API}/user/repos`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${GITHUB_TOKEN}`,
-        'Content-Type': 'application/json',
-        Accept: 'application/vnd.github+json'
-      },
-      body: JSON.stringify({
-        name: repoName,
-        private: false,
-        auto_init: true,
-        description: `Technical assignment repository for ${fullName} (${role})`
-      })
-    });
-
-    repoData = await repoResp.json();
-    console.log('GITHUB CREATE PUBLIC FALLBACK =>', repoData);
-  }
-
+  const repoData = await repoResp.json();
   if (!repoResp.ok) {
     throw new Error('GitHub repo create failed: ' + (repoData.message || JSON.stringify(repoData)));
   }
 
-  await delay(2000);
+  await delay(2500);
 
   const readmeContent = `# Welcome ${fullName}
 
@@ -81,10 +55,10 @@ This repository has been assigned by SensusSoft Technologies for your technical 
 ${role}
 
 ## Important Instructions
-- You can submit source code only once
+- Clone this repository to your local machine
+- Complete the technical assignment
+- Push source code only once as final submission
 - After first final push repository will be locked automatically
-- Maintain clean project structure
-- Submit within 3 working days
 
 Regards,
 SensusSoft HR Team`;
@@ -95,13 +69,15 @@ SensusSoft HR Team`;
 ${assignmentRequirements.map(r => `- ${r}`).join('\n')}
 
 ## Submission Rules
-- Only one final push allowed
-- Repository will auto archive after first push
-- Add deployment link
-- Add README documentation`;
+- Complete project locally
+- Push only one final submission
+- Repository auto archive after first candidate push
+- Add deployment link and README`;
 
   await safeCreateFile(username, repoName, 'README.md', readmeContent);
   await safeCreateFile(username, repoName, 'TASK.md', taskContent);
+
+  // webhook create AFTER starter files
   await safeCreateWebhook(username, repoName);
 
   return {
@@ -114,7 +90,7 @@ async function safeCreateWebhook(owner, repo) {
   try {
     const webhookUrl = 'https://sensussoft-ai-hiring-automation.vercel.app/api/github-submission-webhook';
 
-    const resp = await fetch(`${GITHUB_API}/repos/${owner}/${repo}/hooks`, {
+    await fetch(`${GITHUB_API}/repos/${owner}/${repo}/hooks`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${GITHUB_TOKEN}`,
@@ -132,19 +108,12 @@ async function safeCreateWebhook(owner, repo) {
         }
       })
     });
-
-    const data = await resp.json();
-    console.log('GITHUB WEBHOOK CREATE =>', data.id || data.message);
   } catch (err) {
     console.log('WEBHOOK ERROR =>', err.message);
   }
 }
 
 async function archiveRepo(repoName) {
-  if (!GITHUB_TOKEN) {
-    throw new Error('Missing GitHub token');
-  }
-
   let owner = GITHUB_USER;
 
   if (!owner) {
@@ -154,13 +123,7 @@ async function archiveRepo(repoName) {
         Accept: 'application/vnd.github+json'
       }
     });
-
     const verifyData = await verifyResp.json();
-
-    if (!verifyResp.ok) {
-      throw new Error('Unable to verify GitHub owner');
-    }
-
     owner = verifyData.login;
   }
 
@@ -171,18 +134,11 @@ async function archiveRepo(repoName) {
       'Content-Type': 'application/json',
       Accept: 'application/vnd.github+json'
     },
-    body: JSON.stringify({
-      archived: true
-    })
+    body: JSON.stringify({ archived: true })
   });
 
   const data = await resp.json();
-
-  if (!resp.ok) {
-    throw new Error(data.message || 'Archive failed');
-  }
-
-  console.log('GITHUB REPO ARCHIVED =>', data.full_name);
+  if (!resp.ok) throw new Error(data.message || 'Archive failed');
 }
 
 async function safeCreateFile(owner, repo, filePath, content) {
@@ -207,9 +163,9 @@ async function createFile({ owner, repo, path, content }) {
     })
   });
 
-  const data = await resp.json();
   if (!resp.ok) {
-    throw new Error(`Failed to create ${path}: ` + (data.message || JSON.stringify(data)));
+    const data = await resp.json();
+    throw new Error(data.message || `Failed ${path}`);
   }
 }
 
