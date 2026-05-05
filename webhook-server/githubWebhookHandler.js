@@ -2,8 +2,9 @@ const githubAutoEvaluator = require('./githubAutoEvaluator');
 const hrEvaluationMailer = require('./hrEvaluationMailer');
 const fs = require('fs');
 const path = require('path');
+const { archiveRepo } = require('../github-demo/githubService');
 
-const AUDIT_LOG_PATH = path.join(__dirname, '../audit-logs/submission-evaluation-log.json');
+const AUDIT_LOG_PATH = path.join('/tmp', 'submission-evaluation-log.json');
 
 module.exports = async function githubWebhookHandler(req, res) {
   try {
@@ -34,7 +35,7 @@ module.exports = async function githubWebhookHandler(req, res) {
 
     const submissionTime = payload.head_commit?.timestamp || new Date().toISOString();
 
-    console.log(`[Webhook] Received push for repo: ${repoName} by ${pusherName}`);
+    console.log(`[Webhook] FINAL PUSH RECEIVED FOR ${repoName}`);
 
     const evaluation = await githubAutoEvaluator({
       repoName,
@@ -68,12 +69,16 @@ module.exports = async function githubWebhookHandler(req, res) {
       submissionTime,
       finalScore: evaluation.finalScore,
       aiRemark: evaluation.aiRemark,
-      event: 'submission-evaluated'
+      event: 'submission-evaluated-and-locked'
     });
 
     fs.writeFileSync(AUDIT_LOG_PATH, JSON.stringify(logs, null, 2));
 
-    return res.status(200).send('Submission evaluated and HR notified.');
+    await archiveRepo(repoName);
+
+    console.log(`[Webhook] ${repoName} ARCHIVED AFTER FIRST PUSH`);
+
+    return res.status(200).send('Submission evaluated, HR notified, repository locked.');
 
   } catch (err) {
     console.error('[Webhook Error]', err);

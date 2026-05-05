@@ -11,7 +11,6 @@ async function createRepo({ fullName, role, assignmentTitle, assignmentRequireme
 
   let username = GITHUB_USER;
 
-  // STEP 1 VERIFY USER
   const verifyResp = await fetch(`${GITHUB_API}/user`, {
     headers: {
       Authorization: `Bearer ${GITHUB_TOKEN}`,
@@ -30,7 +29,6 @@ async function createRepo({ fullName, role, assignmentTitle, assignmentRequireme
 
   const repoName = `${slugify(fullName)}-${slugify(role)}-${Date.now()}-demo-task`;
 
-  // STEP 2 CREATE PRIVATE REPO
   let repoResp = await fetch(`${GITHUB_API}/user/repos`, {
     method: 'POST',
     headers: {
@@ -49,7 +47,6 @@ async function createRepo({ fullName, role, assignmentTitle, assignmentRequireme
   let repoData = await repoResp.json();
   console.log('GITHUB CREATE PRIVATE =>', repoData);
 
-  // FALLBACK PUBLIC IF PRIVATE FAIL
   if (!repoResp.ok) {
     repoResp = await fetch(`${GITHUB_API}/user/repos`, {
       method: 'POST',
@@ -74,9 +71,8 @@ async function createRepo({ fullName, role, assignmentTitle, assignmentRequireme
     throw new Error('GitHub repo create failed: ' + (repoData.message || JSON.stringify(repoData)));
   }
 
-  await delay(3000);
+  await delay(2000);
 
-  // STEP 3 CREATE README + TASK
   const readmeContent = `# Welcome ${fullName}
 
 This repository has been assigned by SensusSoft Technologies for your technical evaluation.
@@ -85,9 +81,9 @@ This repository has been assigned by SensusSoft Technologies for your technical 
 ${role}
 
 ## Important Instructions
-- Push your complete source code in this repository
-- Maintain clean commit history
-- Add setup instructions in README
+- You can submit source code only once
+- After first final push repository will be locked automatically
+- Maintain clean project structure
 - Submit within 3 working days
 
 Regards,
@@ -99,16 +95,14 @@ SensusSoft HR Team`;
 ${assignmentRequirements.map(r => `- ${r}`).join('\n')}
 
 ## Submission Rules
-- Maintain professional folder structure
-- Commit code regularly
+- Only one final push allowed
+- Repository will auto archive after first push
 - Add deployment link
-- Add README documentation
-- Final submission deadline: 3 working days`;
+- Add README documentation`;
 
   await safeCreateFile(username, repoName, 'README.md', readmeContent);
   await safeCreateFile(username, repoName, 'TASK.md', taskContent);
 
-  // STEP 4 AUTO WEBHOOK CREATE
   await safeCreateWebhook(username, repoName);
 
   return {
@@ -142,15 +136,30 @@ async function safeCreateWebhook(owner, repo){
 
     const data = await resp.json();
     console.log('GITHUB WEBHOOK CREATE =>', data);
-
-    if (!resp.ok) {
-      console.log('WEBHOOK CREATE FAILED =>', data.message || data);
-    } else {
-      console.log(`WEBHOOK ATTACHED SUCCESSFULLY TO ${repo}`);
-    }
-
   }catch(err){
     console.log('WEBHOOK ERROR =>', err.message);
+  }
+}
+
+async function archiveRepo(repoName){
+  try{
+    const owner = GITHUB_USER;
+    const resp = await fetch(`${GITHUB_API}/repos/${owner}/${repoName}`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${GITHUB_TOKEN}`,
+        'Content-Type': 'application/json',
+        Accept: 'application/vnd.github+json'
+      },
+      body: JSON.stringify({
+        archived: true
+      })
+    });
+
+    const data = await resp.json();
+    console.log('GITHUB REPO ARCHIVED =>', data.full_name || data.message);
+  }catch(err){
+    console.log('ARCHIVE ERROR =>', err.message);
   }
 }
 
@@ -177,22 +186,17 @@ async function createFile({ owner, repo, path, content }) {
   });
 
   const data = await resp.json();
-  console.log(`GITHUB FILE ${path} =>`, data);
-
   if (!resp.ok) {
     throw new Error(`Failed to create ${path}: ` + (data.message || JSON.stringify(data)));
   }
 }
 
 function slugify(str) {
-  return String(str)
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '');
+  return String(str).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 }
 
 function delay(ms){
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-module.exports = { createRepo };
+module.exports = { createRepo, archiveRepo };
