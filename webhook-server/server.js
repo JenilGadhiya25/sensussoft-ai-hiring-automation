@@ -11,7 +11,6 @@ const githubWebhookHandler = require('./githubWebhookHandler');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
-const IS_VERCEL = !!process.env.VERCEL;
 
 const AUDIT_LOG_PATH = process.env.AUDIT_LOG_PATH || path.join('/tmp', 'candidate-log.json');
 const SMTP_EMAIL = process.env.SMTP_EMAIL;
@@ -44,7 +43,7 @@ app.use((req,res,next)=>{
   next();
 });
 
-const upload = multer({ dest: '/tmp' });
+const upload = multer({ dest:'/tmp' });
 
 const transporter = nodemailer.createTransport({
   service:'gmail',
@@ -66,8 +65,8 @@ function enrichSkillsFromSignals(role,resumeText,skills){
   if(combined.includes('react')) set.add('React');
   if(combined.includes('node')) set.add('Node.js');
   if(combined.includes('mongo')) set.add('MongoDB');
-  if(combined.includes('figma')) set.add('Figma');
   if(combined.includes('javascript')) set.add('JavaScript');
+  if(combined.includes('figma')) set.add('Figma');
 
   return Array.from(set);
 }
@@ -157,7 +156,8 @@ async function generateAssignmentPDF(candidate){
     try{
       const pdfPath = path.join('/tmp', `assignment-${Date.now()}.pdf`);
       const doc = new PDFDocument({ margin:40 });
-      doc.pipe(normalfs.createWriteStream(pdfPath));
+      const stream = normalfs.createWriteStream(pdfPath);
+      doc.pipe(stream);
 
       doc.fontSize(18).text('SensusSoft Technologies Pvt. Ltd.', {align:'center'});
       doc.fontSize(15).text('Candidate Personalized Technical Evaluation Assignment', {align:'center'});
@@ -186,15 +186,30 @@ async function generateAssignmentPDF(candidate){
       doc.text('SensusSoft HR & Technical Recruitment Team');
 
       doc.end();
-      doc.on('finish', ()=>resolve(pdfPath));
+      stream.on('finish', ()=>resolve(pdfPath));
+      stream.on('error', reject);
     }catch(err){
       reject(err);
     }
   });
 }
 
+async function safeSendMail(options){
+  try{
+    return await Promise.race([
+      transporter.sendMail(options),
+      new Promise((_,reject)=>setTimeout(()=>reject(new Error('Mail timeout')),10000))
+    ]);
+  }catch(err){
+    console.log('MAIL SEND FAILED =>', err.message);
+    return null;
+  }
+}
+
 app.post('/api/career-apply', upload.single('resumeFile'), async (req,res)=>{
   try{
+    console.log('STEP 1 REQUEST RECEIVED');
+
     const body = req.body || {};
     const fullName = String(body.fullName || '').trim();
     const email = String(body.email || '').trim();
@@ -216,9 +231,12 @@ app.post('/api/career-apply', upload.single('resumeFile'), async (req,res)=>{
     }
 
     const resumeText = req.file ? await extractResumeText(req.file) : '';
+    console.log('STEP 2 RESUME DONE');
+
     const enrichedSkills = enrichSkillsFromSignals(appliedRole,resumeText,skills);
     const assignment = generateAssignment(detectRoleBucket(appliedRole), enrichedSkills, yearsExperience);
 
+    console.log('STEP 3 BEFORE GITHUB');
     let githubRepo = null;
     try{
       githubRepo = await createRepo({
@@ -230,6 +248,7 @@ app.post('/api/career-apply', upload.single('resumeFile'), async (req,res)=>{
     }catch(err){
       console.log('GitHub Repo Create Failed =>', err.message);
     }
+    console.log('STEP 4 AFTER GITHUB');
 
     const candidate = {
       fullName,
@@ -243,8 +262,9 @@ app.post('/api/career-apply', upload.single('resumeFile'), async (req,res)=>{
     };
 
     const pdfFile = await generateAssignmentPDF(candidate);
+    console.log('STEP 5 PDF DONE');
 
-    await transporter.sendMail({
+    await safeSendMail({
       from: SMTP_EMAIL,
       to: email,
       subject: 'SensusSoft Personalized Technical Evaluation Assignment',
@@ -262,6 +282,8 @@ SensusSoft HR Team`,
       attachments:[{ filename:`Technical_Assignment_${fullName}.pdf`, path:pdfFile }]
     });
 
+    console.log('STEP 6 MAIL ATTEMPT DONE');
+
     await writeAuditLog({
       submittedAt:new Date().toISOString(),
       fullName,email,appliedRole,yearsExperience,
@@ -270,6 +292,8 @@ SensusSoft HR Team`,
       assignmentTitle:assignment.projectTitle
     });
 
+    console.log('STEP 7 RESPONSE SEND');
+
     return res.status(201).json({
       success:true,
       assignmentTitle:assignment.projectTitle,
@@ -277,7 +301,7 @@ SensusSoft HR Team`,
     });
 
   }catch(err){
-    console.error('SERVER ERROR =>',err);
+    console.error('SERVER ERROR =>', err);
     return res.status(500).json({ error:'A server error occurred while processing candidate application.' });
   }
 });
