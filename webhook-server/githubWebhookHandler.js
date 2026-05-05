@@ -29,10 +29,7 @@ module.exports = async function githubWebhookHandler(req, res) {
     }
 
     // Ignore owner automatic starter commits
-    if (GITHUB_USER && pusherName.toLowerCase() === GITHUB_USER.toLowerCase()) {
-      console.log('[Webhook] Owner starter push ignored');
-      return res.status(200).send('Owner push ignored');
-    }
+    
 
     // Allow only one candidate push lifetime
     if (processedRepos.has(repoName)) {

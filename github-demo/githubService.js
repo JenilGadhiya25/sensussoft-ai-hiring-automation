@@ -66,8 +66,11 @@ ${assignmentRequirements.map(r => `- ${r}`).join('\n')}
 - Repository permanently frozen after first push`;
 
   await safeCreateFile(username, repoName, 'README.md', readmeContent);
-  await safeCreateFile(username, repoName, 'TASK.md', taskContent);
-  await safeCreateWebhook(username, repoName);
+await safeCreateFile(username, repoName, 'TASK.md', taskContent);
+
+await delay(5000); // important GitHub commit settle wait
+
+await safeCreateWebhook(username, repoName);
 
   return { url: repoData.html_url, mock: false };
 }
