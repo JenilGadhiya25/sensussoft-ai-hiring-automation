@@ -51,17 +51,9 @@ async function createRepo({ fullName, role, assignmentTitle, assignmentRequireme
 
 This repository has been assigned by SensusSoft Technologies for your technical evaluation.
 
-## Applied Role
-${role}
-
-## Important Instructions
-- Clone this repository locally
-- Complete your assigned task
-- Push source code only once as final submission
-- After first GitHub push repository will be permanently locked
-
-Regards,
-SensusSoft HR Team`;
+IMPORTANT:
+Push only one final submission.
+After first push this repository becomes permanently locked.`;
 
   const taskContent = `# ${assignmentTitle}
 
@@ -71,17 +63,13 @@ ${assignmentRequirements.map(r => `- ${r}`).join('\n')}
 ## Submission Rules
 - Complete project locally
 - Push only one final submission
-- Repository permanently locked after first candidate push
-- Add deployment link and README`;
+- Repository permanently frozen after first push`;
 
   await safeCreateFile(username, repoName, 'README.md', readmeContent);
   await safeCreateFile(username, repoName, 'TASK.md', taskContent);
   await safeCreateWebhook(username, repoName);
 
-  return {
-    url: repoData.html_url,
-    mock: false
-  };
+  return { url: repoData.html_url, mock: false };
 }
 
 async function safeCreateWebhook(owner, repo) {
@@ -111,6 +99,17 @@ async function safeCreateWebhook(owner, repo) {
   }
 }
 
+async function getDefaultBranch(owner, repo) {
+  const resp = await fetch(`${GITHUB_API}/repos/${owner}/${repo}`, {
+    headers: {
+      Authorization: `Bearer ${GITHUB_TOKEN}`,
+      Accept: 'application/vnd.github+json'
+    }
+  });
+  const data = await resp.json();
+  return data.default_branch || 'main';
+}
+
 async function lockRepoAfterSubmission(repoName) {
   let owner = GITHUB_USER;
 
@@ -125,19 +124,37 @@ async function lockRepoAfterSubmission(repoName) {
     owner = verifyData.login;
   }
 
-  // step 1 archive repo
-  await fetch(`${GITHUB_API}/repos/${owner}/${repoName}`, {
-    method: 'PATCH',
+  const branch = await getDefaultBranch(owner, repoName);
+
+  // RULESET HARD BLOCK
+  await fetch(`${GITHUB_API}/repos/${owner}/${repoName}/rulesets`, {
+    method: 'POST',
     headers: {
       Authorization: `Bearer ${GITHUB_TOKEN}`,
       'Content-Type': 'application/json',
       Accept: 'application/vnd.github+json'
     },
-    body: JSON.stringify({ archived: true })
+    body: JSON.stringify({
+      name: 'Permanent Submission Freeze',
+      target: 'branch',
+      enforcement: 'active',
+      conditions: {
+        ref_name: {
+          include: [`refs/heads/${branch}`],
+          exclude: []
+        }
+      },
+      rules: [
+        { type: 'deletion' },
+        { type: 'non_fast_forward' },
+        { type: 'creation' },
+        { type: 'update' }
+      ]
+    })
   });
 
-  // step 2 protect main branch
-  await fetch(`${GITHUB_API}/repos/${owner}/${repoName}/branches/main/protection`, {
+  // branch protection
+  await fetch(`${GITHUB_API}/repos/${owner}/${repoName}/branches/${branch}/protection`, {
     method: 'PUT',
     headers: {
       Authorization: `Bearer ${GITHUB_TOKEN}`,
@@ -148,13 +165,24 @@ async function lockRepoAfterSubmission(repoName) {
       required_status_checks: null,
       enforce_admins: true,
       required_pull_request_reviews: null,
-      restrictions: null,
+      restrictions: {},
       allow_force_pushes: false,
       allow_deletions: false
     })
   });
 
-  console.log(`REPO ${repoName} PERMANENTLY LOCKED`);
+  // archive repo
+  await fetch(`${GITHUB_API}/repos/${owner}/${repoName}`, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${GITHUB_TOKEN}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/vnd.github+json'
+    },
+    body: JSON.stringify({ archived: true })
+  });
+
+  console.log(`REPO ${repoName} ULTRA LOCKED`);
 }
 
 async function safeCreateFile(owner, repo, filePath, content) {
