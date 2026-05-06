@@ -34,7 +34,7 @@ async function createRepo({ fullName, role, assignmentTitle, assignmentRequireme
     },
     body: JSON.stringify({
       name: repoName,
-      private: true,
+      private: false,
       auto_init: true,
       description: `Technical assignment repository for ${fullName} (${role})`
     })
