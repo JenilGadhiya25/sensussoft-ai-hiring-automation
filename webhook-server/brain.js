@@ -8,12 +8,7 @@ global.fetch = (...args) =>
   );
 
 const FALLBACK_MODELS = [
-
-  'google/gemini-2.0-flash-exp:free',
-
-  'meta-llama/llama-3.1-8b-instruct:free',
-
-  'mistralai/mistral-7b-instruct:free'
+  'google/gemini-2.0-flash-exp:free'
 ];
 async function callOpenRouter(prompt) {
 
