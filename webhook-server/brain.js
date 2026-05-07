@@ -2,6 +2,10 @@ require('dotenv').config();
 
 const nodemailer = require('nodemailer');
 
+const fetch = (...args) =>
+  import('node-fetch').then(
+    ({ default: fetch }) => fetch(...args)
+  );
 const FALLBACK_MODELS = [
   process.env.OPENROUTER_PRIMARY_MODEL || 'meta-llama/llama-3.3-70b-instruct:free',
   'google/gemini-2.0-flash-exp:free',
