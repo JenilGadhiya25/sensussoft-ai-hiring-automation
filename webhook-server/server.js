@@ -2,8 +2,7 @@ require('dotenv').config();
 
 const express = require('express');
 const multer = require('multer');
-const pdfParse = require('pdf-parse');
-const mammoth = require('mammoth');
+
 const path = require('path');
 const fs = require('fs').promises;
 
@@ -12,18 +11,27 @@ const githubWebhookHandler = require('./githubWebhookHandler');
 const { processCandidate } = require('./brain');
 
 const app = express();
+
 const PORT = process.env.PORT || 4000;
 
 const AUDIT_LOG_PATH =
   process.env.AUDIT_LOG_PATH ||
   path.join('/tmp', 'candidate-log.json');
 
-app.use(express.json({ limit:'10mb' }));
-app.use(express.urlencoded({ extended:true }));
+app.use(express.json({
+  limit:'10mb'
+}));
+
+app.use(express.urlencoded({
+  extended:true
+}));
 
 app.use((req,res,next)=>{
 
-  res.setHeader('Access-Control-Allow-Origin','*');
+  res.setHeader(
+    'Access-Control-Allow-Origin',
+    '*'
+  );
 
   res.setHeader(
     'Access-Control-Allow-Methods',
@@ -43,56 +51,12 @@ app.use((req,res,next)=>{
 });
 
 const upload = multer({
-
   storage: multer.memoryStorage(),
 
   limits:{
     fileSize:5 * 1024 * 1024
   }
 });
-
-async function extractCvText(file){
-
-  if(!file){
-    return '';
-  }
-
-  try{
-
-    if(
-      file.mimetype === 'application/pdf' ||
-      file.originalname.toLowerCase().endsWith('.pdf')
-    ){
-
-      const data = await pdfParse(file.buffer);
-
-      return (data.text || '').trim();
-    }
-
-    if(
-      file.originalname.toLowerCase().endsWith('.docx')
-    ){
-
-      const result =
-        await mammoth.extractRawText({
-          buffer:file.buffer
-        });
-
-      return (result.value || '').trim();
-    }
-
-    return '';
-
-  }catch(err){
-
-    console.log(
-      'CV EXTRACTION ERROR =>',
-      err.message
-    );
-
-    return '';
-  }
-}
 
 async function writeAuditLog(entry){
 
@@ -111,6 +75,7 @@ async function writeAuditLog(entry){
       logs = JSON.parse(old);
 
     }catch(e){
+
       logs = [];
     }
 
@@ -132,7 +97,9 @@ async function writeAuditLog(entry){
 
 function needsGithubRepo(role){
 
-  const lower = String(role || '').toLowerCase();
+  const lower =
+    String(role || '')
+      .toLowerCase();
 
   return (
 
@@ -152,22 +119,37 @@ function needsGithubRepo(role){
 app.post(
   '/api/career-apply',
 
-  upload.single('resumeFile'),
+  upload.none(),
 
   async (req,res)=>{
 
     try{
 
+      console.log(
+        'CAREER APPLY API HIT'
+      );
+
       const body = req.body || {};
 
       const fullName =
-        String(body.fullName || '').trim();
+        String(
+          body.fullName || ''
+        ).trim();
 
       const email =
-        String(body.email || '').trim();
+        String(
+          body.email || ''
+        ).trim();
 
       const appliedRole =
-        String(body.appliedRole || '').trim();
+        String(
+          body.appliedRole || ''
+        ).trim();
+
+      const skills =
+        String(
+          body.skills || ''
+        ).trim();
 
       if(
         !fullName ||
@@ -180,15 +162,6 @@ app.post(
         });
       }
 
-      console.log(
-        '[APPLICATION]',
-        fullName,
-        appliedRole
-      );
-
-      const cvText =
-        await extractCvText(req.file);
-
       const profile = {
 
         name: fullName,
@@ -197,27 +170,34 @@ app.post(
 
         role: appliedRole,
 
-        cv_text: cvText.slice(0,8000)
+        cv_text: skills
       };
 
       let githubRepoUrl = null;
 
-      if(needsGithubRepo(appliedRole)){
+      if(
+        needsGithubRepo(
+          appliedRole
+        )
+      ){
 
         try{
 
-          const repo = await createRepo({
+          const repo =
+            await createRepo({
 
-            fullName,
+              fullName,
 
-            role: appliedRole,
+              role: appliedRole,
 
-            assignmentTitle:'AI Technical Assignment',
+              assignmentTitle:
+                'AI Technical Assignment',
 
-            assignmentRequirements:[]
-          });
+              assignmentRequirements:[]
+            });
 
-          githubRepoUrl = repo.url;
+          githubRepoUrl =
+            repo.url;
 
           console.log(
             'GITHUB REPO CREATED =>',
@@ -252,9 +232,11 @@ app.post(
 
         githubRepoUrl,
 
-        taskTitle: task.title,
+        taskTitle:
+          task.title,
 
-        category: task.category,
+        category:
+          task.category,
 
         seniority:
           task.detected_seniority
@@ -264,9 +246,11 @@ app.post(
 
         success:true,
 
-        taskTitle: task.title,
+        taskTitle:
+          task.title,
 
-        category: task.category,
+        category:
+          task.category,
 
         seniority:
           task.detected_seniority,
@@ -276,15 +260,15 @@ app.post(
 
     }catch(err){
 
-      console.error(
+      console.log(
         'SERVER ERROR =>',
-        err
+        err.message
       );
 
       return res.status(500).json({
 
         error:
-          'Failed to process application'
+          err.message || 'Internal server error'
       });
     }
   }
@@ -295,11 +279,12 @@ app.post(
   githubWebhookHandler
 );
 
-app.get('/',(_,res)=>
+app.get('/',(_,res)=>{
+
   res.send(
     'SensusSoft AI Hiring Automation Running'
-  )
-);
+  );
+});
 
 module.exports = app;
 
