@@ -274,45 +274,182 @@ Return ONLY valid JSON:
 }
 `;
 }
-
 async function generateTask(profile) {
 
   const prompt = buildPrompt(profile);
 
-  let text = await callOpenRouter(prompt);
-
-  text = text
-    .replace(/```json/g, '')
-    .replace(/```/g, '')
-    .trim();
-
-  console.log(
-    'RAW AI RESPONSE =>',
-    text
-  );
+  let text = '';
 
   try {
 
+    text = await callOpenRouter(prompt);
+
+    text = text
+      .replace(/```json/g, '')
+      .replace(/```/g, '')
+      .trim();
+
+    console.log(
+      'RAW AI RESPONSE =>',
+      text
+    );
+
     const parsed = JSON.parse(text);
 
-    return parsed;
+    if (
+      parsed &&
+      parsed.title &&
+      parsed.requirements &&
+      parsed.deliverables
+    ) {
+
+      return parsed;
+    }
 
   } catch (err) {
 
     console.log(
-      'JSON PARSE FAILED =>',
+      'AI TASK GENERATION FAILED =>',
       err.message
     );
-
-    console.log(
-      'INVALID AI RESPONSE =>',
-      text
-    );
-
-    throw new Error(
-      'AI returned invalid JSON response'
-    );
   }
+
+  // SAFE FALLBACK TASKS
+
+  const role =
+    (profile.role || '').toLowerCase();
+
+  const isDesign =
+    role.includes('ui') ||
+    role.includes('ux') ||
+    role.includes('designer');
+
+  // DESIGN TASK
+
+  if (isDesign) {
+
+    return {
+
+      category: 'design',
+
+      cv_summary:
+        'Candidate has UI/UX understanding with modern product design and frontend exposure.',
+
+      detected_seniority: 'mid',
+
+      title:
+        'Enterprise Education Platform UI/UX System',
+
+      scenario:
+        'Design a scalable enterprise education directory platform focused on accessibility, responsive layouts and modern UX workflows for parents, educators and professionals.',
+
+      requirements: [
+
+        'Create responsive desktop and mobile wireframes',
+
+        'Design professional profile listing experience',
+
+        'Build reusable design system and component library',
+
+        'Create accessibility-friendly layouts',
+
+        'Design admin dashboard and analytics pages',
+
+        'Prepare user flow and UX explanation',
+
+        'Use Figma auto-layout and proper spacing'
+      ],
+
+      deliverables: [
+
+        'Complete Figma project link',
+
+        'Responsive UI screens',
+
+        'Mobile layouts',
+
+        'UX explanation PDF',
+
+        'Design system PDF'
+      ],
+
+      evaluation_criteria: [
+
+        'UI quality and consistency',
+
+        'User experience thinking',
+
+        'Accessibility and responsiveness',
+
+        'Professional presentation quality'
+      ],
+
+      deadline_days: 3
+    };
+  }
+
+  // DEVELOPMENT TASK
+
+  return {
+
+    category: 'development',
+
+    cv_summary:
+      'Candidate has full stack JavaScript development experience using React, Node.js and APIs.',
+
+    detected_seniority: 'mid',
+
+    title:
+      'Enterprise Task Management Dashboard',
+
+    scenario:
+      'Build a scalable enterprise task management dashboard with authentication, analytics, role-based access and deployment-ready architecture for modern business workflows.',
+
+    requirements: [
+
+      'Build frontend using React.js',
+
+      'Create authentication system using JWT or Firebase Auth',
+
+      'Develop REST APIs using Node.js and Express',
+
+      'Integrate MongoDB or Firebase database',
+
+      'Implement task creation and workflow management',
+
+      'Add responsive admin dashboard',
+
+      'Deploy frontend and backend',
+
+      'Write professional README documentation'
+    ],
+
+    deliverables: [
+
+      'Complete GitHub repository',
+
+      'Frontend deployment link',
+
+      'Backend deployment link',
+
+      'README setup guide',
+
+      'Architecture explanation PDF'
+    ],
+
+    evaluation_criteria: [
+
+      'Code quality and architecture',
+
+      'Responsive UI quality',
+
+      'API and database implementation',
+
+      'Deployment and documentation'
+    ],
+
+    deadline_days: 3
+  };
 }
 
 function renderList(arr) {
