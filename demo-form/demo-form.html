@@ -6,49 +6,82 @@
 <title>SensusSoft Career Application Portal</title>
 
 <style>
+/* ── Reset ─────────────────────────────────────────────────── */
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif}
+
+/* ── Custom scrollbar — thin, blue-themed ───────────────────── */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{
+  background:rgba(37,99,235,.35);
+  border-radius:10px;
+  transition:background .2s;
+}
+::-webkit-scrollbar-thumb:hover{background:rgba(37,99,235,.65)}
+/* Firefox */
+*{scrollbar-width:thin;scrollbar-color:rgba(37,99,235,.35) transparent}
+
+/* ── Body — scrollable, never clips content ─────────────────── */
+html{
+  scroll-behavior:smooth;
+}
 body{
   min-height:100vh;
   background:linear-gradient(135deg,#dbeafe,#eef2ff,#f8fafc);
+  /* flex + align-items:flex-start so tall content is never cut */
   display:flex;
   justify-content:center;
-  align-items:center;
-  padding:25px;
-  overflow:hidden;
+  align-items:flex-start;
+  /* vertical scroll always available */
+  overflow-x:hidden;
+  overflow-y:auto;
+  /* generous padding so content never touches viewport edges */
+  padding:40px 24px 60px;
   position:relative;
+  /* fix background so it covers the full scrollable area */
+  background-attachment:fixed;
 }
+
+/* ── Decorative blobs — fixed so they don't scroll away ─────── */
 body:before,body:after{
   content:'';
-  position:absolute;
+  position:fixed;
   border-radius:50%;
   filter:blur(70px);
-  opacity:.5;
+  opacity:.45;
   animation:float 8s infinite alternate;
+  pointer-events:none;
+  z-index:0;
 }
-body:before{
-  width:260px;height:260px;background:#93c5fd;top:40px;left:60px;
-}
-body:after{
-  width:320px;height:320px;background:#c4b5fd;bottom:50px;right:80px;
-}
+body:before{width:280px;height:280px;background:#93c5fd;top:40px;left:60px}
+body:after{width:340px;height:340px;background:#c4b5fd;bottom:50px;right:80px}
 @keyframes float{
-  from{transform:translateY(0px)}
-  to{transform:translateY(30px)}
+  from{transform:translateY(0)}
+  to{transform:translateY(28px)}
 }
 
+/* ── Wrapper card ───────────────────────────────────────────── */
 .wrapper{
+  position:relative;
+  z-index:2;
   width:100%;
   max-width:1260px;
+  /* let height grow naturally with content */
   display:grid;
   grid-template-columns:1fr 1.1fr;
-  background:rgba(255,255,255,.92);
+  background:rgba(255,255,255,.93);
   backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
   border-radius:30px;
-  overflow:hidden;
+  /* overflow:visible so nothing is clipped */
+  overflow:visible;
   box-shadow:0 25px 70px rgba(37,99,235,.18);
-  z-index:2;
+  /* small top margin so card doesn't sit flush at top */
+  margin-top:8px;
+  margin-bottom:8px;
 }
 
+/* ── Left panel ─────────────────────────────────────────────── */
 .left{
   background:linear-gradient(160deg,#2563eb,#1d4ed8,#1e40af);
   color:white;
@@ -56,180 +89,133 @@ body:after{
   display:flex;
   flex-direction:column;
   justify-content:center;
+  /* round only left corners so card shape is preserved */
+  border-radius:30px 0 0 30px;
 }
 
 .logo{
-  width:74px;
-  height:74px;
+  width:74px;height:74px;
   border-radius:50%;
   background:rgba(255,255,255,.18);
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  font-size:28px;
-  font-weight:700;
+  display:flex;justify-content:center;align-items:center;
+  font-size:28px;font-weight:700;
   margin-bottom:25px;
   box-shadow:0 0 25px rgba(255,255,255,.15);
+  flex-shrink:0;
 }
 
-.left h1{
-  font-size:38px;
-  line-height:1.25;
-  margin-bottom:16px;
-}
+.left h1{font-size:38px;line-height:1.25;margin-bottom:16px}
+.left p{font-size:15px;opacity:.92;line-height:1.7;margin-bottom:28px}
 
-.left p{
-  font-size:15px;
-  opacity:.92;
-  line-height:1.7;
-  margin-bottom:28px;
-}
-
-.points{
-  display:flex;
-  flex-direction:column;
-  gap:16px;
-}
-
+.points{display:flex;flex-direction:column;gap:16px}
 .point{
   background:rgba(255,255,255,.12);
   border:1px solid rgba(255,255,255,.15);
-  padding:14px 16px;
-  border-radius:14px;
-  font-size:14px;
-  transition:.3s;
+  padding:14px 16px;border-radius:14px;font-size:14px;transition:.3s;
 }
+.point:hover{transform:translateX(6px)}
 
-.point:hover{
-  transform:translateX(6px);
-}
-
+/* ── Right panel ────────────────────────────────────────────── */
 .right{
-  padding:45px;
+  padding:45px 45px 50px;
+  /* round only right corners */
+  border-radius:0 30px 30px 0;
+  /* allow right panel to scroll independently if needed */
+  overflow:visible;
 }
 
-.right h2{
-  text-align:center;
-  font-size:30px;
-  color:#0f172a;
-  margin-bottom:8px;
-}
-
-.sub{
-  text-align:center;
-  color:#64748b;
-  font-size:14px;
-  margin-bottom:22px;
-}
+.right h2{text-align:center;font-size:30px;color:#0f172a;margin-bottom:8px}
+.sub{text-align:center;color:#64748b;font-size:14px;margin-bottom:22px}
 
 .itnote{
-  background:#eff6ff;
-  color:#1d4ed8;
+  background:#eff6ff;color:#1d4ed8;
   border:1px solid #bfdbfe;
-  padding:12px;
-  border-radius:12px;
-  font-size:13px;
-  text-align:center;
-  margin-bottom:24px;
+  padding:12px;border-radius:12px;font-size:13px;
+  text-align:center;margin-bottom:24px;
+  line-height:1.5;
 }
 
-form{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:18px;
-}
-
-.full{
-  grid-column:1/3;
-}
+/* ── Form grid ──────────────────────────────────────────────── */
+form{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.full{grid-column:1/3}
 
 label{
-  display:block;
-  margin-bottom:7px;
-  font-weight:600;
-  color:#1e293b;
-  font-size:14px;
+  display:block;margin-bottom:7px;
+  font-weight:600;color:#1e293b;font-size:14px;
 }
 
 input{
-  width:100%;
-  padding:14px 16px;
-  border-radius:14px;
-  border:1px solid #dbe2ea;
-  background:#f8fafc;
-  font-size:14px;
-  transition:.3s;
+  width:100%;padding:14px 16px;
+  border-radius:14px;border:1px solid #dbe2ea;
+  background:#f8fafc;font-size:14px;transition:.3s;
 }
-
 input:focus{
-  outline:none;
-  border-color:#2563eb;
-  background:white;
+  outline:none;border-color:#2563eb;background:white;
   box-shadow:0 0 0 4px rgba(37,99,235,.12);
 }
 
 .uploadbox{
-  padding:18px;
-  border:2px dashed #93c5fd;
-  border-radius:14px;
-  background:#f8fbff;
+  padding:18px;border:2px dashed #93c5fd;
+  border-radius:14px;background:#f8fbff;
 }
 
 button{
-  grid-column:1/3;
-  margin-top:8px;
-  padding:16px;
-  border:none;
-  border-radius:14px;
+  grid-column:1/3;margin-top:8px;padding:16px;
+  border:none;border-radius:14px;
   background:linear-gradient(135deg,#2563eb,#1d4ed8);
-  color:white;
-  font-size:16px;
-  font-weight:700;
-  cursor:pointer;
+  color:white;font-size:16px;font-weight:700;cursor:pointer;
   box-shadow:0 12px 25px rgba(37,99,235,.25);
+  transition:transform .2s,opacity .2s;
 }
+button:hover:not(:disabled){transform:translateY(-2px)}
+button:disabled{opacity:.75;cursor:not-allowed}
 
-button:hover{
-  transform:translateY(-2px);
-}
-
-button:disabled{
-  opacity:.75;
-}
-
+/* ── Result / error box ─────────────────────────────────────── */
 .result{
   grid-column:1/3;
-  margin-top:8px;
-  padding:14px;
+  margin-top:10px;
+  padding:14px 16px;
   border-radius:12px;
   display:none;
-  line-height:1.6;
+  line-height:1.65;
   font-size:14px;
+  /* max height + scroll so long errors never break layout */
+  max-height:160px;
+  overflow-y:auto;
+  /* smooth scroll inside the box */
+  scroll-behavior:smooth;
+  word-break:break-word;
+  white-space:pre-wrap;
 }
+.success{background:#dcfce7;color:#166534;border:1px solid #86efac}
+.error{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5}
 
-.success{
-  background:#dcfce7;
-  color:#166534;
-  border:1px solid #86efac;
-}
-
-.error{
-  background:#fee2e2;
-  color:#991b1b;
-  border:1px solid #fca5a5;
-}
-
+/* ── Footer ─────────────────────────────────────────────────── */
 .footer{
-  margin-top:24px;
-  text-align:center;
-  color:#64748b;
-  font-size:12px;
+  margin-top:28px;
+  padding-bottom:4px;
+  text-align:center;color:#64748b;font-size:12px;
 }
 
-@media(max-width:900px){
+/* ── Responsive — tablet / mobile ──────────────────────────── */
+@media(max-width:1024px){
+  body{padding:32px 20px 56px}
   .wrapper{grid-template-columns:1fr}
+  .left{border-radius:30px 30px 0 0;padding:48px 36px}
+  .right{border-radius:0 0 30px 30px;padding:36px 36px 48px}
+  .left h1{font-size:30px}
+}
+
+@media(max-width:640px){
+  body{padding:20px 14px 48px}
+  .wrapper{border-radius:22px}
+  .left{border-radius:22px 22px 0 0;padding:36px 24px}
+  .right{border-radius:0 0 22px 22px;padding:28px 20px 40px}
+  .left h1{font-size:26px}
   form{grid-template-columns:1fr}
   .full,button,.result{grid-column:1/2}
+  input{padding:12px 14px}
+  button{padding:14px}
 }
 </style>
 </head>
@@ -302,9 +288,13 @@ const resultBox = document.getElementById('result');
 const submitBtn = document.getElementById('submitBtn');
 
 function showResult(msg, ok){
-  resultBox.style.display='block';
-  resultBox.className='result ' + (ok ? 'success' : 'error');
+  resultBox.style.display = 'block';
+  resultBox.className = 'result ' + (ok ? 'success' : 'error');
   resultBox.innerText = msg;
+  // Scroll the result box into view smoothly so it's never hidden below fold
+  setTimeout(() => {
+    resultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, 60);
 }
 
 form.addEventListener('submit', async (e)=>{
