@@ -8,7 +8,7 @@ global.fetch = (...args) =>
   );
 
 const FALLBACK_MODELS = [
-  'google/gemini-2.0-flash-exp:free'
+  'google/gemini-flash-1.5-8b'
 ];
 async function callOpenRouter(prompt) {
 
