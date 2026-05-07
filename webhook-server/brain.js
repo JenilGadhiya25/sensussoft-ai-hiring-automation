@@ -465,24 +465,123 @@ async function processCandidate(
   githubRepoUrl
 ) {
 
-  const task = await generateTask(profile);
+  const roleText =
+  (profile.role || '').toLowerCase();
 
-  if (task.role_mismatch) {
+const skillText =
+  (
+    profile.cv_text ||
+    ''
+  ).toLowerCase();
 
-    await transporter.sendMail({
+const developerKeywords = [
+  'react',
+  'node',
+  'javascript',
+  'typescript',
+  'frontend',
+  'backend',
+  'full stack',
+  'developer',
+  'mern',
+  'next.js',
+  'mongodb',
+  'firebase',
+  'express',
+  'api'
+];
 
-      from: process.env.SMTP_EMAIL,
+const designKeywords = [
+  'figma',
+  'ui',
+  'ux',
+  'designer',
+  'wireframe',
+  'adobe xd',
+  'photoshop'
+];
 
-      to: profile.email,
+const isDeveloperRole =
+  roleText.includes('developer') ||
+  roleText.includes('engineer') ||
+  roleText.includes('react') ||
+  roleText.includes('frontend') ||
+  roleText.includes('backend');
 
-      subject:
-        'SensusSoft Application Status',
+const isDesignRole =
+  roleText.includes('ui') ||
+  roleText.includes('ux') ||
+  roleText.includes('designer');
 
-      html: renderMismatchEmail(task)
-    });
+const hasDeveloperSkills =
+  developerKeywords.some(keyword =>
+    skillText.includes(keyword)
+  );
 
-    return task;
-  }
+const hasDesignSkills =
+  designKeywords.some(keyword =>
+    skillText.includes(keyword)
+  );
+
+// ONLY REAL MISMATCH
+
+if (
+  isDeveloperRole &&
+  !hasDeveloperSkills &&
+  hasDesignSkills
+) {
+
+  const mismatchTask = {
+    message:
+      'The selected role does not match the candidate technical background and experience.'
+  };
+
+  await transporter.sendMail({
+
+    from: process.env.SMTP_EMAIL,
+
+    to: profile.email,
+
+    subject:
+      'SensusSoft Application Status',
+
+    html: renderMismatchEmail(
+      mismatchTask
+    )
+  });
+
+  return mismatchTask;
+}
+
+if (
+  isDesignRole &&
+  hasDeveloperSkills &&
+  !hasDesignSkills
+) {
+
+  const mismatchTask = {
+    message:
+      'The selected role does not match the candidate technical background and experience.'
+  };
+
+  await transporter.sendMail({
+
+    from: process.env.SMTP_EMAIL,
+
+    to: profile.email,
+
+    subject:
+      'SensusSoft Application Status',
+
+    html: renderMismatchEmail(
+      mismatchTask
+    )
+  });
+
+  return mismatchTask;
+}
+
+const task = await generateTask(profile);
 
   await transporter.sendMail({
 
