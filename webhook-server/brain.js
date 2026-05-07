@@ -300,56 +300,222 @@ async function generateTask(profile) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  ROLE-MISMATCH DETECTOR  (local pre-check before calling AI)
-//  Catches obvious mismatches without spending an API call
+//  STRICT ROLE-VS-SKILL VALIDATOR
+//
+//  Rules:
+//  ┌─────────────────────────────────────────────────────────────────────────┐
+//  │ DESIGN role (UI/UX / Designer / Figma)                                 │
+//  │   REQUIRED in resume: figma | ui | ux | design | wireframe | adobe xd  │
+//  │   BLOCKED if resume has ONLY dev skills and ZERO design signals         │
+//  ├─────────────────────────────────────────────────────────────────────────┤
+//  │ DEV role (React / Node / Frontend / Backend / Engineer / Developer …)   │
+//  │   REQUIRED in resume: any coding / tech keyword                         │
+//  │   BLOCKED if resume has ONLY design-only skills and ZERO dev signals    │
+//  ├─────────────────────────────────────────────────────────────────────────┤
+//  │ QA role  → resume must have at least one QA / testing / dev keyword     │
+//  │ DevOps   → resume must have at least one infra / cloud / dev keyword    │
+//  │ Product  → resume must have at least one PM / strategy / dev keyword    │
+//  └─────────────────────────────────────────────────────────────────────────┘
+//
+//  Returns: { mismatch: boolean, reason: string }
 // ─────────────────────────────────────────────────────────────────────────────
 
 function detectMismatch(profile) {
-  const roleText  = (profile.role    || '').toLowerCase();
-  const skillText = (profile.cv_text || '').toLowerCase();
+  const role  = (profile.role     || '').toLowerCase().trim();
+  const cv    = (profile.cv_text  || '').toLowerCase().trim();
 
-  const devKeywords = [
-    'react', 'node', 'javascript', 'typescript', 'frontend', 'backend',
-    'full stack', 'fullstack', 'developer', 'mern', 'next.js', 'nextjs',
-    'mongodb', 'firebase', 'express', 'api', 'python', 'django', 'flask',
-    'java', 'spring', 'golang', 'php', 'laravel', 'vue', 'angular',
-    'flutter', 'kotlin', 'swift', 'android', 'ios', 'mobile', 'devops',
-    'docker', 'kubernetes', 'aws', 'gcp', 'azure', 'ci/cd', 'qa', 'testing',
-    'cypress', 'selenium', 'playwright', 'jest', 'data', 'ml', 'ai',
-    'machine learning', 'tensorflow', 'pytorch', 'sql', 'postgres', 'redis'
-  ];
+  // ── Keyword banks ──────────────────────────────────────────────────────────
 
-  const designKeywords = [
-    'figma', 'adobe xd', 'sketch', 'wireframe', 'prototype', 'ui/ux',
+  // Skills that belong to UI/UX / Design domain
+  const DESIGN_SKILLS = [
+    'figma', 'adobe xd', 'sketch', 'invision', 'zeplin', 'wireframe',
+    'wireframing', 'prototype', 'prototyping', 'ui/ux', 'ui ux', 'ux design',
+    'ui design', 'user experience', 'user interface', 'user research',
+    'design system', 'visual design', 'interaction design', 'motion design',
     'graphic design', 'photoshop', 'illustrator', 'indesign', 'canva',
-    'brand design', 'visual design', 'motion design'
+    'brand design', 'typography', 'color theory', 'heuristic', 'usability'
   ];
 
-  const isDeveloperRole =
-    roleText.includes('developer') || roleText.includes('engineer') ||
-    roleText.includes('react')     || roleText.includes('node')     ||
-    roleText.includes('frontend')  || roleText.includes('backend')  ||
-    roleText.includes('fullstack') || roleText.includes('full stack') ||
-    roleText.includes('devops')    || roleText.includes('qa')       ||
-    roleText.includes('python')    || roleText.includes('data')     ||
-    roleText.includes('mobile')    || roleText.includes('android')  ||
-    roleText.includes('ios');
+  // Skills that belong to Software Development domain
+  const DEV_SKILLS = [
+    'react', 'react.js', 'reactjs', 'next.js', 'nextjs', 'vue', 'angular',
+    'svelte', 'javascript', 'typescript', 'html', 'css', 'tailwind',
+    'node', 'node.js', 'nodejs', 'express', 'fastify', 'hapi',
+    'rest api', 'graphql', 'websocket', 'socket.io',
+    'mongodb', 'mongoose', 'postgresql', 'mysql', 'sqlite', 'redis',
+    'firebase', 'firestore', 'supabase', 'prisma',
+    'python', 'django', 'flask', 'fastapi',
+    'java', 'spring', 'spring boot', 'kotlin',
+    'golang', 'go lang', 'gin',
+    'php', 'laravel', 'symfony',
+    'c#', '.net', 'asp.net',
+    'flutter', 'dart', 'react native', 'swift', 'android', 'ios', 'mobile',
+    'docker', 'kubernetes', 'k8s', 'aws', 'gcp', 'azure', 'terraform',
+    'ci/cd', 'github actions', 'jenkins', 'gitlab ci', 'devops', 'linux',
+    'git', 'github', 'api', 'backend', 'frontend', 'full stack', 'fullstack',
+    'mern', 'mean', 'developer', 'engineer', 'programming', 'coding',
+    'machine learning', 'ml', 'ai', 'tensorflow', 'pytorch', 'pandas',
+    'data science', 'sql', 'database', 'microservice', 'serverless',
+    'jest', 'cypress', 'playwright', 'selenium', 'testing', 'qa',
+    'postman', 'swagger', 'openapi', 'jwt', 'oauth', 'authentication'
+  ];
+
+  // Skills that belong to QA / Testing domain
+  const QA_SKILLS = [
+    'qa', 'quality assurance', 'testing', 'test automation', 'manual testing',
+    'cypress', 'playwright', 'selenium', 'jest', 'mocha', 'chai',
+    'postman', 'jmeter', 'k6', 'load testing', 'performance testing',
+    'test cases', 'test plan', 'bug report', 'defect', 'regression',
+    'smoke testing', 'sanity testing', 'api testing', 'e2e testing',
+    'appium', 'testng', 'junit', 'pytest', 'robot framework'
+  ];
+
+  // Skills that belong to DevOps / Cloud domain
+  const DEVOPS_SKILLS = [
+    'devops', 'docker', 'kubernetes', 'k8s', 'helm', 'terraform', 'ansible',
+    'aws', 'gcp', 'azure', 'cloud', 'ec2', 's3', 'lambda', 'ecs', 'eks',
+    'ci/cd', 'github actions', 'jenkins', 'gitlab ci', 'circleci',
+    'nginx', 'apache', 'linux', 'bash', 'shell', 'prometheus', 'grafana',
+    'elk', 'datadog', 'new relic', 'infrastructure', 'sre', 'site reliability'
+  ];
+
+  // Skills that belong to Product Management domain
+  const PRODUCT_SKILLS = [
+    'product manager', 'product owner', 'product management', 'prd',
+    'roadmap', 'user stories', 'agile', 'scrum', 'kanban', 'sprint',
+    'backlog', 'stakeholder', 'go-to-market', 'gtm', 'okr', 'kpi',
+    'market research', 'competitive analysis', 'product strategy',
+    'product roadmap', 'feature prioritization', 'rice', 'moscow',
+    'jira', 'confluence', 'notion', 'miro', 'figma' // figma is valid for PM too
+  ];
+
+  // ── Role classification ────────────────────────────────────────────────────
 
   const isDesignRole =
-    roleText.includes('ui/ux')    || roleText.includes('ui ux')    ||
-    roleText.includes('designer') || roleText.includes('ux')       ||
-    roleText.includes('figma');
+    /\b(ui\s*\/?\s*ux|ux\s*designer|ui\s*designer|graphic\s*designer|visual\s*designer|product\s*designer|interaction\s*designer|figma\s*designer)\b/.test(role) ||
+    role.includes('designer') ||
+    role.includes('ui/ux')    ||
+    role.includes('ui ux');
 
-  const hasDevSkills    = devKeywords.some(kw => skillText.includes(kw));
-  const hasDesignSkills = designKeywords.some(kw => skillText.includes(kw));
+  const isDevRole =
+    role.includes('developer')   || role.includes('engineer')    ||
+    role.includes('react')       || role.includes('node')        ||
+    role.includes('frontend')    || role.includes('front-end')   ||
+    role.includes('backend')     || role.includes('back-end')    ||
+    role.includes('fullstack')   || role.includes('full stack')  ||
+    role.includes('full-stack')  || role.includes('mern')        ||
+    role.includes('mean')        || role.includes('next.js')     ||
+    role.includes('nextjs')      || role.includes('vue')         ||
+    role.includes('angular')     || role.includes('python')      ||
+    role.includes('java')        || role.includes('golang')      ||
+    role.includes('php')         || role.includes('flutter')     ||
+    role.includes('android')     || role.includes('ios')         ||
+    role.includes('mobile')      || role.includes('software');
 
-  // Developer role but ONLY design skills and NO dev skills
-  if (isDeveloperRole && !hasDevSkills && hasDesignSkills) return true;
+  const isQARole =
+    role.includes('qa')          || role.includes('quality')     ||
+    role.includes('tester')      || role.includes('test')        ||
+    role.includes('automation');
 
-  // Design role but ONLY dev skills and NO design skills
-  if (isDesignRole && hasDevSkills && !hasDesignSkills) return true;
+  const isDevOpsRole =
+    role.includes('devops')      || role.includes('cloud')       ||
+    role.includes('sre')         || role.includes('infrastructure') ||
+    role.includes('platform')    || role.includes('devsecops');
 
-  return false;
+  const isProductRole =
+    role.includes('product manager') || role.includes('product owner') ||
+    role.includes('pm ')             || role.includes(' pm');
+
+  // ── Skill presence checks ──────────────────────────────────────────────────
+
+  const hasDesignSkills  = DESIGN_SKILLS.some(kw => cv.includes(kw));
+  const hasDevSkills     = DEV_SKILLS.some(kw => cv.includes(kw));
+  const hasQASkills      = QA_SKILLS.some(kw => cv.includes(kw));
+  const hasDevOpsSkills  = DEVOPS_SKILLS.some(kw => cv.includes(kw));
+  const hasProductSkills = PRODUCT_SKILLS.some(kw => cv.includes(kw));
+
+  // Count how many design-only signals exist (no dev overlap)
+  const designOnlyCount = DESIGN_SKILLS.filter(kw => cv.includes(kw)).length;
+  const devSkillCount   = DEV_SKILLS.filter(kw => cv.includes(kw)).length;
+
+  // ── RULE 1: Design role → must have design skills ─────────────────────────
+  // If applying for UI/UX / Designer but resume is purely dev (React, Node, etc.)
+  // with ZERO design signals → MISMATCH
+  if (isDesignRole) {
+    if (!hasDesignSkills && hasDevSkills) {
+      console.log('[Brain][Mismatch] Design role but resume contains only dev skills');
+      return {
+        mismatch: true,
+        reason:
+          'You applied for a UI/UX / Design role, but your resume contains primarily ' +
+          'software development skills (React, Node.js, APIs, etc.) with no design tools ' +
+          'such as Figma, Adobe XD, wireframing, or UX research. ' +
+          'Please apply for a Developer role instead.'
+      };
+    }
+  }
+
+  // ── RULE 2: Dev role → must have dev skills ───────────────────────────────
+  // If applying for React / Node / Frontend / Backend / Engineer but resume
+  // is purely design (Figma, wireframes, etc.) with ZERO coding signals → MISMATCH
+  if (isDevRole) {
+    if (!hasDevSkills && hasDesignSkills && designOnlyCount >= 2) {
+      console.log('[Brain][Mismatch] Dev role but resume contains only design skills');
+      return {
+        mismatch: true,
+        reason:
+          'You applied for a Software Developer / Engineer role, but your resume contains ' +
+          'primarily design skills (Figma, wireframes, prototypes, etc.) with no software ' +
+          'development skills such as React, JavaScript, Node.js, APIs, or databases. ' +
+          'Please apply for a UI/UX Designer role instead.'
+      };
+    }
+  }
+
+  // ── RULE 3: QA role → must have QA or dev skills ─────────────────────────
+  if (isQARole) {
+    if (!hasQASkills && !hasDevSkills && hasDesignSkills) {
+      console.log('[Brain][Mismatch] QA role but resume contains only design skills');
+      return {
+        mismatch: true,
+        reason:
+          'You applied for a QA / Testing role, but your resume does not contain any ' +
+          'testing, automation, or development skills. Please apply for a role that ' +
+          'matches your actual background.'
+      };
+    }
+  }
+
+  // ── RULE 4: DevOps role → must have infra / dev skills ───────────────────
+  if (isDevOpsRole) {
+    if (!hasDevOpsSkills && !hasDevSkills && hasDesignSkills) {
+      console.log('[Brain][Mismatch] DevOps role but resume contains only design skills');
+      return {
+        mismatch: true,
+        reason:
+          'You applied for a DevOps / Cloud role, but your resume does not contain any ' +
+          'infrastructure, cloud, or development skills. Please apply for a role that ' +
+          'matches your actual background.'
+      };
+    }
+  }
+
+  // ── RULE 5: Product role → must have PM or dev or design skills ───────────
+  if (isProductRole) {
+    if (!hasProductSkills && !hasDevSkills && !hasDesignSkills) {
+      console.log('[Brain][Mismatch] Product role but no relevant skills found');
+      return {
+        mismatch: true,
+        reason:
+          'You applied for a Product Manager role, but your resume does not contain any ' +
+          'product management, development, or design skills. Please apply for a role ' +
+          'that matches your actual background.'
+      };
+    }
+  }
+
+  // ── No mismatch ────────────────────────────────────────────────────────────
+  return { mismatch: false, reason: '' };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -488,13 +654,16 @@ function renderAssignmentEmail(profile, task, githubRepoUrl) {
 
 async function processCandidate(profile, githubRepoUrl) {
 
-  // ── 1. Local role-mismatch pre-check ──────────────────────────────────────
-  if (detectMismatch(profile)) {
-    console.log('[Brain] Local mismatch detected for =>', profile.name);
+  // ── 1. STRICT role-vs-skill validation (runs before any API call) ──────────
+  const validation = detectMismatch(profile);
+
+  if (validation.mismatch) {
+    console.log('[Brain] Role mismatch detected for =>', profile.name);
+    console.log('[Brain] Reason =>', validation.reason);
 
     const mismatchTask = {
       role_mismatch: true,
-      message: 'The selected role does not match your technical background. Please apply for a role that aligns with your actual skills and experience.'
+      message: validation.reason
     };
 
     try {
@@ -509,6 +678,7 @@ async function processCandidate(profile, githubRepoUrl) {
       console.log('[Brain] Mismatch email failed =>', mailErr.message);
     }
 
+    // Return early — no task, no GitHub repo, no PDF
     return mismatchTask;
   }
 
