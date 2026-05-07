@@ -127,15 +127,50 @@ ${cvBlock}
 
 STEP 0:
 
-First verify whether the selected role actually matches the candidate background.
+Carefully verify whether the selected role realistically matches the candidate background.
 
-Examples:
+IMPORTANT VALIDATION RULES:
 
-- UI/UX role + React/Node/Mongo/backend resume => ROLE_MISMATCH
-- Developer role + Figma/Adobe XD/Wireframe resume => ROLE_MISMATCH
-- QA role + only design portfolio => ROLE_MISMATCH
+ACCEPT these as DEVELOPMENT background:
+- React
+- Node.js
+- Next.js
+- JavaScript
+- TypeScript
+- MongoDB
+- Firebase
+- Express
+- Backend
+- Frontend
+- Full Stack
+- MERN
+- APIs
+- Web Development
 
-If role mismatch detected:
+ACCEPT these as DESIGN background:
+- UI/UX
+- Figma
+- Adobe XD
+- Wireframes
+- Prototypes
+- Graphic Design
+
+ONLY mark ROLE_MISMATCH when the candidate background is COMPLETELY different.
+
+Examples of VALID matches:
+- React Developer + Full Stack resume = VALID
+- Frontend Developer + MERN Stack resume = VALID
+- Node.js Developer + Backend resume = VALID
+
+Examples of REAL mismatches:
+- UI/UX Designer + Backend Developer resume = ROLE_MISMATCH
+- React Developer + Graphic Designer resume = ROLE_MISMATCH
+- QA Engineer + Only UI/UX portfolio = ROLE_MISMATCH
+
+If there is partial overlap with developer technologies,
+DO NOT mark mismatch.
+
+If mismatch detected:
 
 Return ONLY this JSON:
 
