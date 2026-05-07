@@ -119,7 +119,7 @@ function needsGithubRepo(role){
 app.post(
   '/api/career-apply',
 
-  upload.none(),
+  upload.single('resumeFile'),
 
   async (req,res)=>{
 
@@ -162,16 +162,16 @@ app.post(
         });
       }
 
-      const profile = {
+     const profile = {
 
-        name: fullName,
+  name: fullName,
 
-        email,
+  email,
 
-        role: appliedRole,
+  role: appliedRole,
 
-        cv_text: skills
-      };
+  cv_text: skills || ''
+};
 
       let githubRepoUrl = null;
 
