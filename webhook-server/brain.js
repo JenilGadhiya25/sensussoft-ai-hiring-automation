@@ -10,7 +10,7 @@ global.fetch = (...args) =>
 const FALLBACK_MODELS = [
   process.env.OPENROUTER_PRIMARY_MODEL || 'meta-llama/llama-3.3-70b-instruct:free',
   'google/gemini-2.0-flash-exp:free',
-  'deepseek/deepseek-chat-v3-0324:free'
+  'openchat/openchat-7b:free'
 ];
 
 async function callOpenRouter(prompt) {
