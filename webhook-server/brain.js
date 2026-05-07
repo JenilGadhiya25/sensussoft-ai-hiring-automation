@@ -8,7 +8,7 @@ global.fetch = (...args) =>
   );
 
 const FALLBACK_MODELS = [
-  'google/gemini-flash-1.5-8b'
+  'openai/gpt-3.5-turbo'
 ];
 async function callOpenRouter(prompt) {
 
