@@ -1,7 +1,6 @@
 require('dotenv').config();
 
 const nodemailer = require('nodemailer');
-const fetch = require('node-fetch');
 
 const FALLBACK_MODELS = [
   process.env.OPENROUTER_PRIMARY_MODEL || 'meta-llama/llama-3.3-70b-instruct:free',
@@ -17,33 +16,36 @@ async function callOpenRouter(prompt) {
 
     try {
 
+      console.log('TRYING MODEL =>', model);
+
       const res = await fetch(
         'https://openrouter.ai/api/v1/chat/completions',
         {
-          method:'POST',
+          method: 'POST',
 
-          headers:{
-            'Authorization':'Bearer ' + process.env.OPENROUTER_API_KEY,
-            'Content-Type':'application/json',
-            'HTTP-Referer':'https://sensussoft.com',
-            'X-Title':'SensusSoft Hiring Automation'
+          headers: {
+            'Authorization': 'Bearer ' + process.env.OPENROUTER_API_KEY,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': 'https://sensussoft.com',
+            'X-Title': 'SensusSoft Hiring Automation'
           },
 
-          body:JSON.stringify({
+          body: JSON.stringify({
             model,
-            messages:[
+
+            messages: [
               {
-                role:'user',
-                content:prompt
+                role: 'user',
+                content: prompt
               }
             ],
-            temperature:0.7,
-            response_format:{ type:'json_object' }
+
+            temperature: 0.7
           })
         }
       );
 
-      if(!res.ok){
+      if (!res.ok) {
 
         const errText = await res.text();
 
@@ -54,16 +56,26 @@ async function callOpenRouter(prompt) {
         );
 
         lastErr = new Error(errText);
+
         continue;
       }
 
       const data = await res.json();
 
-      console.log('OPENROUTER MODEL USED =>', model);
+      console.log(
+        'OPENROUTER MODEL USED =>',
+        model
+      );
 
-      return data.choices[0].message.content;
+      return data?.choices?.[0]?.message?.content || '';
 
-    } catch(err){
+    } catch (err) {
+
+      console.log(
+        'MODEL ERROR =>',
+        model,
+        err.message
+      );
 
       lastErr = err;
     }
@@ -74,15 +86,15 @@ async function callOpenRouter(prompt) {
 
 const transporter = nodemailer.createTransport({
 
-  service:'gmail',
+  service: 'gmail',
 
-  auth:{
-    user:process.env.SMTP_EMAIL,
-    pass:process.env.SMTP_PASS
+  auth: {
+    user: process.env.SMTP_EMAIL,
+    pass: process.env.SMTP_PASS
   }
 });
 
-function buildPrompt(profile){
+function buildPrompt(profile) {
 
   const cvBlock = profile.cv_text
     ? `
@@ -144,7 +156,7 @@ product:
 IMPORTANT:
 Generate professional realistic enterprise assignment documentation.
 
-Return ONLY valid JSON:
+Return ONLY valid JSON.
 
 {
   "category":"",
@@ -160,26 +172,87 @@ Return ONLY valid JSON:
 `;
 }
 
-async function generateTask(profile){
+async function generateTask(profile) {
 
-  const prompt = buildPrompt(profile);
+  try {
 
-  let text = await callOpenRouter(prompt);
+    const prompt = buildPrompt(profile);
 
-  text = text
-    .replace(/```json/g,'')
-    .replace(/```/g,'')
-    .trim();
+    let text = await callOpenRouter(prompt);
 
-  return JSON.parse(text);
+    text = text
+      .replace(/```json/g, '')
+      .replace(/```/g, '')
+      .trim();
+
+    console.log('RAW AI RESPONSE =>', text);
+
+    const parsed = JSON.parse(text);
+
+    return parsed;
+
+  } catch (err) {
+
+    console.log(
+      'AI TASK GENERATION FAILED =>',
+      err.message
+    );
+
+    return {
+
+      category: 'development',
+
+      cv_summary:
+        'AI fallback assignment generated.',
+
+      detected_seniority: 'mid',
+
+      title:
+        'Enterprise Task Management Dashboard',
+
+      scenario:
+        'Build a scalable enterprise dashboard system with authentication, analytics and responsive UI.',
+
+      requirements: [
+        'Implement authentication flow',
+        'Create responsive dashboard UI',
+        'Integrate REST APIs',
+        'Add role-based access',
+        'Deploy application'
+      ],
+
+      deliverables: [
+        'GitHub repository',
+        'README documentation',
+        'Deployment link'
+      ],
+
+      evaluation_criteria: [
+        'Code quality',
+        'Architecture',
+        'Responsiveness',
+        'Documentation'
+      ],
+
+      deadline_days: 3
+    };
+  }
 }
 
-function renderEmail(profile, task, githubRepoUrl){
+function renderEmail(
+  profile,
+  task,
+  githubRepoUrl
+) {
 
   const list = arr =>
-    arr.map(
-      x => `<li style="margin:7px 0">${x}</li>`
-    ).join('');
+
+    (arr || [])
+      .map(
+        x =>
+          `<li style="margin:7px 0">${x}</li>`
+      )
+      .join('');
 
   return `
   <div style="font-family:Arial,sans-serif;max-width:700px;color:#333">
@@ -207,24 +280,33 @@ function renderEmail(profile, task, githubRepoUrl){
 
     <p>${task.scenario}</p>
 
+    <h4>Profile Summary</h4>
+
+    <p>
+      ${task.cv_summary}
+    </p>
+
     <h4>Requirements</h4>
+
     <ul>
       ${list(task.requirements)}
     </ul>
 
     <h4>Deliverables</h4>
+
     <ul>
       ${list(task.deliverables)}
     </ul>
 
     <h4>Evaluation Criteria</h4>
+
     <ul>
       ${list(task.evaluation_criteria)}
     </ul>
 
     ${
       githubRepoUrl
-      ? `
+        ? `
       <h4>Assigned GitHub Repository</h4>
 
       <p>
@@ -239,7 +321,7 @@ function renderEmail(profile, task, githubRepoUrl){
         Repository becomes permanently locked after first submission.
       </p>
       `
-      : ''
+        : ''
     }
 
     <p>
@@ -258,19 +340,23 @@ function renderEmail(profile, task, githubRepoUrl){
   `;
 }
 
-async function processCandidate(profile, githubRepoUrl){
+async function processCandidate(
+  profile,
+  githubRepoUrl
+) {
 
   const task = await generateTask(profile);
 
   await transporter.sendMail({
 
-    from:process.env.SMTP_EMAIL,
+    from: process.env.SMTP_EMAIL,
 
-    to:profile.email,
+    to: profile.email,
 
-    subject:`SensusSoft Assignment — ${profile.role}`,
+    subject:
+      `SensusSoft Assignment — ${profile.role}`,
 
-    html:renderEmail(
+    html: renderEmail(
       profile,
       task,
       githubRepoUrl
