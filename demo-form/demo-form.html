@@ -27,59 +27,35 @@ body {
 /* ── Card wrapper ───────────────────────────────────────────── */
 .wrapper {
   display: flex;
-  width: 1100px;
+  width: 1060px;
   max-width: 100%;
   min-height: 640px;
-  border-radius: 24px;
-  /* visible so blob doesn't clip left panel content */
-  overflow: visible;
-  box-shadow: 0 28px 80px rgba(30, 58, 95, 0.18);
-  /* clip only the rounded corners, not the content */
-  isolation: isolate;
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: 0 24px 72px rgba(30, 58, 95, 0.16);
 }
 
 /* ══════════════════════════════════════════════════════════════
-   LEFT PANEL
+   LEFT PANEL  — clean straight edge, no blob
 ══════════════════════════════════════════════════════════════ */
 .left {
-  /* wider so text never gets cut by the blob */
-  width: 44%;
-  background: linear-gradient(155deg, #3b82f6 0%, #2563eb 55%, #1d4ed8 100%);
-  /* extra right padding so text stays clear of the blob */
-  padding: 56px 70px 56px 52px;
+  width: 40%;
+  background: linear-gradient(160deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%);
+  padding: 52px 44px 52px 48px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   position: relative;
-  /* clip only the left+top+bottom rounded corners */
-  border-radius: 24px 0 0 24px;
-  /* allow blob to overflow right edge without clipping text */
-  overflow: visible;
+  overflow: hidden;
   flex-shrink: 0;
 }
 
-/* Howsy-style large curved white blob on right edge */
-.left::after {
-  content: '';
-  position: absolute;
-  /* pull it further right so it overlaps the seam */
-  right: -100px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 240px;
-  /* taller than panel so it covers full height */
-  height: 120%;
-  background: #f0f4ff;
-  border-radius: 50%;
-  pointer-events: none;
-  /* sit above left bg but below left text */
-  z-index: 1;
-}
+/* NO blob — clean straight split like target image */
+.left::after { display: none; }
 
 .left-inner {
   position: relative;
-  /* above the blob */
-  z-index: 2;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -91,16 +67,16 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 44px;
+  margin-bottom: 36px;
 }
 .logo-box {
-  width: 42px; height: 42px;
+  width: 48px; height: 48px;
   background: rgba(255,255,255,0.20);
-  border-radius: 11px;
+  border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
+  font-size: 22px; font-weight: 800; color: #fff;
 }
-.logo-box svg { width: 22px; height: 22px; fill: #fff; }
 .logo-name {
   font-size: 20px; font-weight: 700;
   color: #fff; letter-spacing: -0.3px;
@@ -123,23 +99,20 @@ body {
 }
 
 /* ── Feature pills ── */
-.features { display: flex; flex-direction: column; gap: 11px; }
+.features { display: flex; flex-direction: column; gap: 10px; }
 .feat {
-  display: flex; align-items: center; gap: 12px;
-  background: rgba(255,255,255,0.13);
-  border: 1px solid rgba(255,255,255,0.18);
-  border-radius: 12px;
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.20);
+  border-radius: 10px;
   padding: 12px 16px;
   font-size: 13.5px; color: #fff; font-weight: 500;
   transition: transform 0.2s;
 }
-.feat:hover { transform: translateX(5px); }
+.feat:hover { transform: translateX(4px); }
 .feat-dot {
-  width: 22px; height: 22px; flex-shrink: 0;
-  background: rgba(255,255,255,0.22);
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 11px; color: #fff;
+  font-size: 13px; color: #fff; flex-shrink: 0;
+  font-weight: 700;
 }
 
 /* ── Bottom tagline ── */
@@ -162,15 +135,11 @@ body {
 .right {
   flex: 1;
   background: #fff;
-  /* left padding accounts for the blob overlap */
-  padding: 52px 52px 44px 60px;
+  padding: 48px 52px 44px 52px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   overflow-y: auto;
-  border-radius: 0 24px 24px 0;
-  /* clip right panel cleanly */
-  overflow: hidden;
 }
 
 /* ── Heading ── */
@@ -319,24 +288,9 @@ input.valid ~ .tick { display: block; }
 
 /* ── Responsive ── */
 @media (max-width: 900px) {
-  .wrapper {
-    flex-direction: column;
-    border-radius: 18px;
-    overflow: hidden;
-  }
-  .left {
-    width: 100%;
-    padding: 40px 36px;
-    min-height: auto;
-    border-radius: 18px 18px 0 0;
-    overflow: hidden;
-  }
-  .left::after { display: none; }
-  .right {
-    padding: 36px 32px 44px;
-    border-radius: 0 0 18px 18px;
-    overflow: visible;
-  }
+  .wrapper { flex-direction: column; border-radius: 18px; overflow: hidden; }
+  .left { width: 100%; padding: 40px 36px; min-height: auto; }
+  .right { padding: 36px 32px 44px; }
   .form-row { flex-direction: column; gap: 0; }
 }
 @media (max-width: 480px) {
@@ -359,12 +313,7 @@ input.valid ~ .tick { display: block; }
       <!-- Logo -->
       <div>
         <div class="logo">
-          <div class="logo-box">
-            <!-- house/building icon — SensusSoft brand feel -->
-            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
-            </svg>
-          </div>
+          <div class="logo-box">S</div>
           <span class="logo-name">SensusSoft</span>
         </div>
 
