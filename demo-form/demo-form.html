@@ -3,219 +3,317 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>SensusSoft Career Application Portal</title>
+<title>SensusSoft — Career Application Portal</title>
 
 <style>
 /* ── Reset ─────────────────────────────────────────────────── */
-*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif}
-
-/* ── Custom scrollbar — thin, blue-themed ───────────────────── */
-::-webkit-scrollbar{width:6px;height:6px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{
-  background:rgba(37,99,235,.35);
-  border-radius:10px;
-  transition:background .2s;
-}
-::-webkit-scrollbar-thumb:hover{background:rgba(37,99,235,.65)}
-/* Firefox */
-*{scrollbar-width:thin;scrollbar-color:rgba(37,99,235,.35) transparent}
-
-/* ── Body — scrollable, never clips content ─────────────────── */
-html{
-  scroll-behavior:smooth;
-}
-body{
-  min-height:100vh;
-  background:linear-gradient(135deg,#dbeafe,#eef2ff,#f8fafc);
-  /* flex + align-items:flex-start so tall content is never cut */
-  display:flex;
-  justify-content:center;
-  align-items:flex-start;
-  /* vertical scroll always available */
-  overflow-x:hidden;
-  overflow-y:auto;
-  /* generous padding so content never touches viewport edges */
-  padding:40px 24px 60px;
-  position:relative;
-  /* fix background so it covers the full scrollable area */
-  background-attachment:fixed;
+*, *::before, *::after {
+  margin: 0; padding: 0; box-sizing: border-box;
+  font-family: 'Segoe UI', Inter, system-ui, Arial, sans-serif;
 }
 
-/* ── Decorative blobs — fixed so they don't scroll away ─────── */
-body:before,body:after{
-  content:'';
-  position:fixed;
-  border-radius:50%;
-  filter:blur(70px);
-  opacity:.45;
-  animation:float 8s infinite alternate;
-  pointer-events:none;
-  z-index:0;
-}
-body:before{width:280px;height:280px;background:#93c5fd;top:40px;left:60px}
-body:after{width:340px;height:340px;background:#c4b5fd;bottom:50px;right:80px}
-@keyframes float{
-  from{transform:translateY(0)}
-  to{transform:translateY(28px)}
+/* ── Page ───────────────────────────────────────────────────── */
+html { scroll-behavior: smooth; }
+body {
+  min-height: 100vh;
+  background: #f0f4ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  overflow-x: hidden;
 }
 
-/* ── Wrapper card ───────────────────────────────────────────── */
-.wrapper{
-  position:relative;
-  z-index:2;
-  width:100%;
-  max-width:1260px;
-  /* let height grow naturally with content */
-  display:grid;
-  grid-template-columns:1fr 1.1fr;
-  background:rgba(255,255,255,.93);
-  backdrop-filter:blur(14px);
-  -webkit-backdrop-filter:blur(14px);
-  border-radius:30px;
-  /* overflow:visible so nothing is clipped */
-  overflow:visible;
-  box-shadow:0 25px 70px rgba(37,99,235,.18);
-  /* small top margin so card doesn't sit flush at top */
-  margin-top:8px;
-  margin-bottom:8px;
+/* ── Card wrapper ───────────────────────────────────────────── */
+.wrapper {
+  display: flex;
+  width: 1020px;
+  max-width: 100%;
+  min-height: 620px;
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: 0 28px 80px rgba(30, 58, 95, 0.18);
 }
 
-/* ── Left panel ─────────────────────────────────────────────── */
-.left{
-  background:linear-gradient(160deg,#2563eb,#1d4ed8,#1e40af);
-  color:white;
-  padding:60px 45px;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  /* round only left corners so card shape is preserved */
-  border-radius:30px 0 0 30px;
+/* ══════════════════════════════════════════════════════════════
+   LEFT PANEL
+══════════════════════════════════════════════════════════════ */
+.left {
+  width: 42%;
+  background: linear-gradient(155deg, #3b82f6 0%, #2563eb 55%, #1d4ed8 100%);
+  padding: 56px 44px 56px 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
 }
 
-.logo{
-  width:74px;height:74px;
-  border-radius:50%;
-  background:rgba(255,255,255,.18);
-  display:flex;justify-content:center;align-items:center;
-  font-size:28px;font-weight:700;
-  margin-bottom:25px;
-  box-shadow:0 0 25px rgba(255,255,255,.15);
-  flex-shrink:0;
+/* Howsy-style large curved white blob on right edge */
+.left::after {
+  content: '';
+  position: absolute;
+  right: -90px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 220px;
+  height: 110%;
+  background: #f0f4ff;
+  border-radius: 50%;
+  pointer-events: none;
 }
 
-.left h1{font-size:38px;line-height:1.25;margin-bottom:16px}
-.left p{font-size:15px;opacity:.92;line-height:1.7;margin-bottom:28px}
-
-.points{display:flex;flex-direction:column;gap:16px}
-.point{
-  background:rgba(255,255,255,.12);
-  border:1px solid rgba(255,255,255,.15);
-  padding:14px 16px;border-radius:14px;font-size:14px;transition:.3s;
-}
-.point:hover{transform:translateX(6px)}
-
-/* ── Right panel ────────────────────────────────────────────── */
-.right{
-  padding:45px 45px 50px;
-  /* round only right corners */
-  border-radius:0 30px 30px 0;
-  /* allow right panel to scroll independently if needed */
-  overflow:visible;
+.left-inner {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  justify-content: space-between;
 }
 
-.right h2{text-align:center;font-size:30px;color:#0f172a;margin-bottom:8px}
-.sub{text-align:center;color:#64748b;font-size:14px;margin-bottom:22px}
-
-.itnote{
-  background:#eff6ff;color:#1d4ed8;
-  border:1px solid #bfdbfe;
-  padding:12px;border-radius:12px;font-size:13px;
-  text-align:center;margin-bottom:24px;
-  line-height:1.5;
+/* ── Logo ── */
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 44px;
+}
+.logo-box {
+  width: 42px; height: 42px;
+  background: rgba(255,255,255,0.20);
+  border-radius: 11px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.logo-box svg { width: 22px; height: 22px; fill: #fff; }
+.logo-name {
+  font-size: 20px; font-weight: 700;
+  color: #fff; letter-spacing: -0.3px;
 }
 
-/* ── Form grid ──────────────────────────────────────────────── */
-form{display:grid;grid-template-columns:1fr 1fr;gap:18px}
-.full{grid-column:1/3}
-
-label{
-  display:block;margin-bottom:7px;
-  font-weight:600;color:#1e293b;font-size:14px;
+/* ── Headline ── */
+.left-headline {
+  font-size: 32px; font-weight: 800;
+  color: #fff; line-height: 1.25;
+  letter-spacing: -0.6px;
+  margin-bottom: 18px;
 }
 
-input{
-  width:100%;padding:14px 16px;
-  border-radius:14px;border:1px solid #dbe2ea;
-  background:#f8fafc;font-size:14px;transition:.3s;
-}
-input:focus{
-  outline:none;border-color:#2563eb;background:white;
-  box-shadow:0 0 0 4px rgba(37,99,235,.12);
+/* ── Description ── */
+.left-desc {
+  font-size: 14px;
+  color: rgba(255,255,255,0.82);
+  line-height: 1.7;
+  margin-bottom: 36px;
 }
 
-.uploadbox{
-  padding:18px;border:2px dashed #93c5fd;
-  border-radius:14px;background:#f8fbff;
+/* ── Feature pills ── */
+.features { display: flex; flex-direction: column; gap: 11px; }
+.feat {
+  display: flex; align-items: center; gap: 12px;
+  background: rgba(255,255,255,0.13);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 13.5px; color: #fff; font-weight: 500;
+  transition: transform 0.2s;
+}
+.feat:hover { transform: translateX(5px); }
+.feat-dot {
+  width: 22px; height: 22px; flex-shrink: 0;
+  background: rgba(255,255,255,0.22);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; color: #fff;
 }
 
-button{
-  grid-column:1/3;margin-top:8px;padding:16px;
-  border:none;border-radius:14px;
-  background:linear-gradient(135deg,#2563eb,#1d4ed8);
-  color:white;font-size:16px;font-weight:700;cursor:pointer;
-  box-shadow:0 12px 25px rgba(37,99,235,.25);
-  transition:transform .2s,opacity .2s;
+/* ── Bottom tagline ── */
+.left-tagline {
+  margin-top: 36px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.60);
+  line-height: 1.5;
 }
-button:hover:not(:disabled){transform:translateY(-2px)}
-button:disabled{opacity:.75;cursor:not-allowed}
-
-/* ── Result / error box ─────────────────────────────────────── */
-.result{
-  grid-column:1/3;
-  margin-top:10px;
-  padding:14px 16px;
-  border-radius:12px;
-  display:none;
-  line-height:1.65;
-  font-size:14px;
-  /* max height + scroll so long errors never break layout */
-  max-height:160px;
-  overflow-y:auto;
-  /* smooth scroll inside the box */
-  scroll-behavior:smooth;
-  word-break:break-word;
-  white-space:pre-wrap;
-}
-.success{background:#dcfce7;color:#166534;border:1px solid #86efac}
-.error{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5}
-
-/* ── Footer ─────────────────────────────────────────────────── */
-.footer{
-  margin-top:28px;
-  padding-bottom:4px;
-  text-align:center;color:#64748b;font-size:12px;
+.left-tagline strong {
+  display: block;
+  font-size: 14px; font-weight: 700;
+  color: rgba(255,255,255,0.90);
+  margin-top: 2px;
 }
 
-/* ── Responsive — tablet / mobile ──────────────────────────── */
-@media(max-width:1024px){
-  body{padding:32px 20px 56px}
-  .wrapper{grid-template-columns:1fr}
-  .left{border-radius:30px 30px 0 0;padding:48px 36px}
-  .right{border-radius:0 0 30px 30px;padding:36px 36px 48px}
-  .left h1{font-size:30px}
+/* ══════════════════════════════════════════════════════════════
+   RIGHT PANEL
+══════════════════════════════════════════════════════════════ */
+.right {
+  flex: 1;
+  background: #fff;
+  padding: 52px 52px 44px 56px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow-y: auto;
 }
 
-@media(max-width:640px){
-  body{padding:20px 14px 48px}
-  .wrapper{border-radius:22px}
-  .left{border-radius:22px 22px 0 0;padding:36px 24px}
-  .right{border-radius:0 0 22px 22px;padding:28px 20px 40px}
-  .left h1{font-size:26px}
-  form{grid-template-columns:1fr}
-  .full,button,.result{grid-column:1/2}
-  input{padding:12px 14px}
-  button{padding:14px}
+/* ── Heading ── */
+.right-title {
+  font-size: 26px; font-weight: 800;
+  color: #0f172a; text-align: center;
+  letter-spacing: -0.5px; margin-bottom: 5px;
+}
+.right-sub {
+  font-size: 13.5px; color: #64748b;
+  text-align: center; margin-bottom: 20px;
+}
+
+/* ── Info banner ── */
+.info-banner {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  padding: 11px 16px;
+  font-size: 12.5px; color: #1d4ed8;
+  text-align: center; margin-bottom: 26px;
+  line-height: 1.55;
+}
+
+/* ── Form layout ── */
+.form-row {
+  display: flex; gap: 16px;
+  margin-bottom: 0;
+}
+.form-row .field { flex: 1; }
+.field { margin-bottom: 18px; }
+
+/* ── Field header (label + hint) ── */
+.field-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 7px;
+}
+.field-top label {
+  font-size: 13px; font-weight: 600; color: #1e293b;
+}
+.field-top label .req { color: #ef4444; margin-left: 2px; }
+.field-top .hint {
+  font-size: 11.5px; color: #94a3b8; font-style: italic;
+}
+
+/* ── Input wrapper (for tick) ── */
+.inp-wrap { position: relative; }
+
+input[type=text],
+input[type=email],
+input[type=number] {
+  width: 100%;
+  padding: 12px 40px 12px 15px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 14px; color: #0f172a;
+  background: #fff; outline: none;
+  transition: border-color 0.18s, box-shadow 0.18s;
+  font-family: inherit;
+}
+input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.10);
+}
+input.valid { border-color: #22c55e; }
+input.valid:focus { box-shadow: 0 0 0 3px rgba(34,197,94,0.10); }
+
+/* tick icon */
+.tick {
+  position: absolute; right: 13px; top: 50%;
+  transform: translateY(-50%);
+  color: #22c55e; font-size: 15px;
+  display: none; pointer-events: none;
+}
+input.valid ~ .tick { display: block; }
+
+/* ── Upload box ── */
+.upload-field { margin-bottom: 18px; }
+.upload-box {
+  display: flex; align-items: center; gap: 12px;
+  border: 1.5px dashed #93c5fd;
+  border-radius: 10px;
+  padding: 14px 16px;
+  background: #f8fbff;
+  cursor: pointer;
+  transition: border-color 0.18s, background 0.18s;
+}
+.upload-box:hover { border-color: #2563eb; background: #eff6ff; }
+.upload-box input[type=file] { display: none; }
+.upload-icon { font-size: 20px; flex-shrink: 0; }
+.upload-text { font-size: 13.5px; color: #64748b; }
+.upload-text span { color: #2563eb; font-weight: 600; }
+.upload-name { font-size: 12.5px; color: #94a3b8; margin-top: 2px; }
+
+/* ── Submit button ── */
+.btn-submit {
+  width: 100%; padding: 14px;
+  background: #2563eb; color: #fff;
+  border: none; border-radius: 10px;
+  font-size: 15.5px; font-weight: 700;
+  cursor: pointer; letter-spacing: 0.1px;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  transition: background 0.18s, transform 0.1s, box-shadow 0.18s;
+  box-shadow: 0 6px 20px rgba(37,99,235,0.22);
+  margin-top: 4px;
+}
+.btn-submit:hover { background: #1d4ed8; box-shadow: 0 8px 28px rgba(37,99,235,0.30); }
+.btn-submit:active { transform: scale(0.99); }
+.btn-submit:disabled { background: #93c5fd; box-shadow: none; cursor: not-allowed; }
+.btn-arrow { font-size: 18px; }
+
+/* spinner */
+.spinner {
+  width: 17px; height: 17px;
+  border: 2.5px solid rgba(255,255,255,0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: none;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Privacy note ── */
+.privacy {
+  font-size: 11.5px; color: #94a3b8;
+  text-align: center; margin-top: 13px; line-height: 1.6;
+}
+
+/* ── Result box ── */
+.result {
+  margin-top: 14px; padding: 13px 16px;
+  border-radius: 10px; font-size: 13.5px;
+  font-weight: 500; display: none; line-height: 1.6;
+  word-break: break-word;
+}
+.result.success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+.result.error   { background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; }
+
+/* ── Footer ── */
+.footer-note {
+  font-size: 11.5px; color: #94a3b8;
+  text-align: center; margin-top: 16px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 860px) {
+  .wrapper { flex-direction: column; border-radius: 16px; }
+  .left { width: 100%; padding: 40px 32px; min-height: auto; }
+  .left::after { display: none; }
+  .right { padding: 36px 28px 40px; }
+  .form-row { flex-direction: column; gap: 0; }
+}
+@media (max-width: 480px) {
+  body { padding: 16px 10px; }
+  .left { padding: 32px 22px; }
+  .left-headline { font-size: 26px; }
+  .right { padding: 28px 18px 36px; }
+  .right-title { font-size: 22px; }
 }
 </style>
 </head>
@@ -223,133 +321,252 @@ button:disabled{opacity:.75;cursor:not-allowed}
 
 <div class="wrapper">
 
+  <!-- ══════════ LEFT PANEL ══════════ -->
   <div class="left">
-    <div class="logo">S</div>
-    <h1>Enterprise AI Hiring Automation</h1>
-    <p>SensusSoft intelligently screens technical candidates, generates personalized assignments, allocates GitHub repositories, and automates HR workflows.</p>
+    <div class="left-inner">
 
-    <div class="points">
-      <div class="point">✔ AI Based Technical Candidate Evaluation</div>
-      <div class="point">✔ Personalized Assignment PDF Generation</div>
-      <div class="point">✔ Auto GitHub Repository Allocation</div>
-      <div class="point">✔ Automated HR Email Delivery Workflow</div>
+      <!-- Logo -->
+      <div>
+        <div class="logo">
+          <div class="logo-box">
+            <!-- house/building icon — SensusSoft brand feel -->
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+            </svg>
+          </div>
+          <span class="logo-name">SensusSoft</span>
+        </div>
+
+        <!-- Headline -->
+        <div class="left-headline">Enterprise AI<br/>Hiring Automation</div>
+
+        <!-- Description -->
+        <p class="left-desc">
+          SensusSoft intelligently screens technical candidates,
+          generates personalized assignments, allocates GitHub
+          repositories, and automates HR workflows.
+        </p>
+
+        <!-- Features -->
+        <div class="features">
+          <div class="feat"><div class="feat-dot">✓</div>AI Based Technical Candidate Evaluation</div>
+          <div class="feat"><div class="feat-dot">✓</div>Personalized Assignment PDF Generation</div>
+          <div class="feat"><div class="feat-dot">✓</div>Auto GitHub Repository Allocation</div>
+          <div class="feat"><div class="feat-dot">✓</div>Automated HR Email Delivery Workflow</div>
+        </div>
+      </div>
+
+      <!-- Bottom tagline -->
+      <div class="left-tagline">
+        Powered by
+        <strong>AI Hiring Automation</strong>
+      </div>
+
     </div>
   </div>
 
+  <!-- ══════════ RIGHT PANEL ══════════ -->
   <div class="right">
-    <h2>Career Application Portal</h2>
-    <div class="sub">Submit Candidate Details For AI Technical Screening</div>
-    <div class="itnote">Only IT / Software / Technical profiles are accepted in this recruitment automation portal.</div>
 
-    <form id="careerForm">
+    <h1 class="right-title">Career Application Portal</h1>
+    <p class="right-sub">Submit Candidate Details For AI Technical Screening</p>
 
-      <div>
-        <label>Full Name *</label>
-        <input id="fullName" type="text" required />
+    <div class="info-banner">
+      Only IT / Software / Technical profiles are accepted in this recruitment automation portal.
+    </div>
+
+    <form id="careerForm" autocomplete="off">
+
+      <!-- Row 1: Full Name + Email -->
+      <div class="form-row">
+        <div class="field">
+          <div class="field-top">
+            <label for="fullName">Full Name <span class="req">*</span></label>
+          </div>
+          <div class="inp-wrap">
+            <input id="fullName" type="text" placeholder="Rahul Shah" required />
+            <span class="tick">✓</span>
+          </div>
+        </div>
+        <div class="field">
+          <div class="field-top">
+            <label for="email">Email Address <span class="req">*</span></label>
+            <span class="hint">For assignment delivery</span>
+          </div>
+          <div class="inp-wrap">
+            <input id="email" type="email" placeholder="you@example.com" required />
+            <span class="tick">✓</span>
+          </div>
+        </div>
       </div>
 
-      <div>
-        <label>Email Address *</label>
-        <input id="email" type="email" required />
+      <!-- Row 2: Applied Role + Years of Experience -->
+      <div class="form-row">
+        <div class="field">
+          <div class="field-top">
+            <label for="appliedRole">Applied Role <span class="req">*</span></label>
+          </div>
+          <div class="inp-wrap">
+            <input id="appliedRole" type="text"
+              placeholder="React Developer / UI UX Designer" required />
+            <span class="tick">✓</span>
+          </div>
+        </div>
+        <div class="field">
+          <div class="field-top">
+            <label for="yearsExperience">Years of Experience <span class="req">*</span></label>
+          </div>
+          <div class="inp-wrap">
+            <input id="yearsExperience" type="number" min="0" step="0.1" placeholder="3" required />
+            <span class="tick">✓</span>
+          </div>
+        </div>
       </div>
 
-      <div>
-        <label>Applied Role *</label>
-        <input id="appliedRole" type="text" placeholder="React Developer / UI UX Designer" required />
+      <!-- Known Skills -->
+      <div class="field">
+        <div class="field-top">
+          <label for="skills">Known Skills (comma separated) <span class="req">*</span></label>
+          <span class="hint">Be specific</span>
+        </div>
+        <div class="inp-wrap">
+          <input id="skills" type="text"
+            placeholder="React, Node.js, MongoDB, Figma" required />
+          <span class="tick">✓</span>
+        </div>
       </div>
 
-      <div>
-        <label>Years of Experience *</label>
-        <input id="yearsExperience" type="number" min="0" step="0.1" required />
+      <!-- Upload Resume PDF -->
+      <div class="upload-field">
+        <div class="field-top">
+          <label>Upload Resume PDF <span class="req">*</span></label>
+        </div>
+        <label class="upload-box" for="resumeFile">
+          <span class="upload-icon">📄</span>
+          <div>
+            <div class="upload-text"><span>Choose file</span> &nbsp;— PDF, DOC, DOCX</div>
+            <div class="upload-name" id="fileName">No file chosen</div>
+          </div>
+          <input id="resumeFile" type="file" accept=".pdf,.doc,.docx" required />
+        </label>
       </div>
 
-      <div class="full">
-        <label>Known Skills (comma separated) *</label>
-        <input id="skills" type="text" placeholder="React, Node.js, MongoDB, Figma" required />
-      </div>
+      <!-- Submit -->
+      <button type="submit" class="btn-submit" id="submitBtn">
+        <span id="btnText">Submit Career Application</span>
+        <div class="spinner" id="spinner"></div>
+        <span class="btn-arrow" id="btnArrow">→</span>
+      </button>
 
-      <div class="full uploadbox">
-        <label>Upload Resume PDF *</label>
-        <input id="resumeFile" type="file" accept=".pdf" required />
-      </div>
-
-      <button id="submitBtn" type="submit">Submit Career Application</button>
-
+      <!-- Result -->
       <div id="result" class="result"></div>
+
     </form>
 
-    <div class="footer">Powered by SensusSoft Enterprise AI Hiring Automation</div>
+    <p class="privacy">
+      We take your data privacy seriously and will not share your details with anyone else.
+      By submitting you accept our Terms &amp; Conditions and Privacy Policy.
+    </p>
+
+    <p class="footer-note">Powered by SensusSoft Enterprise AI Hiring Automation</p>
+
   </div>
 </div>
 
 <script>
-const form = document.getElementById('careerForm');
+// ── File name display ───────────────────────────────────────────────────────
+document.getElementById('resumeFile').addEventListener('change', function () {
+  const nameEl = document.getElementById('fileName');
+  const textEl = this.closest('.upload-box').querySelector('.upload-text');
+  if (this.files.length) {
+    nameEl.textContent = this.files[0].name;
+    textEl.innerHTML   = '<span>' + this.files[0].name + '</span>';
+  } else {
+    nameEl.textContent = 'No file chosen';
+    textEl.innerHTML   = '<span>Choose file</span> &nbsp;— PDF, DOC, DOCX';
+  }
+});
+
+// ── Live checkmarks ─────────────────────────────────────────────────────────
+['fullName', 'email', 'appliedRole', 'yearsExperience', 'skills'].forEach(id => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener('input', () => {
+    el.classList.toggle('valid', el.value.trim().length > 0);
+  });
+});
+
+// ── Form submit ─────────────────────────────────────────────────────────────
+const form      = document.getElementById('careerForm');
 const resultBox = document.getElementById('result');
 const submitBtn = document.getElementById('submitBtn');
+const spinner   = document.getElementById('spinner');
+const btnText   = document.getElementById('btnText');
+const btnArrow  = document.getElementById('btnArrow');
 
-function showResult(msg, ok){
+function setLoading(on) {
+  submitBtn.disabled     = on;
+  spinner.style.display  = on ? 'block' : 'none';
+  btnArrow.style.display = on ? 'none'  : 'inline';
+  btnText.textContent    = on ? 'Processing Application...' : 'Submit Career Application';
+}
+
+function showResult(msg, ok) {
   resultBox.style.display = 'block';
-  resultBox.className = 'result ' + (ok ? 'success' : 'error');
-  resultBox.innerText = msg;
-  // Scroll the result box into view smoothly so it's never hidden below fold
+  resultBox.className     = 'result ' + (ok ? 'success' : 'error');
+  resultBox.innerText     = msg;
   setTimeout(() => {
     resultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }, 60);
 }
 
-form.addEventListener('submit', async (e)=>{
+form.addEventListener('submit', async (e) => {
   e.preventDefault();
 
   const resume = document.getElementById('resumeFile').files[0];
-  if(!resume){
-    showResult('Please upload candidate resume PDF.', false);
+  if (!resume) {
+    showResult('Please upload your resume PDF.', false);
     return;
   }
 
-  submitBtn.disabled = true;
-  submitBtn.innerText = 'Processing Candidate Application...';
+  setLoading(true);
+  resultBox.style.display = 'none';
 
   const fd = new FormData();
-  fd.append('fullName', document.getElementById('fullName').value.trim());
-  fd.append('email', document.getElementById('email').value.trim());
-  fd.append('appliedRole', document.getElementById('appliedRole').value.trim());
+  fd.append('fullName',        document.getElementById('fullName').value.trim());
+  fd.append('email',           document.getElementById('email').value.trim());
+  fd.append('appliedRole',     document.getElementById('appliedRole').value.trim());
   fd.append('yearsExperience', document.getElementById('yearsExperience').value);
-  fd.append('skills', document.getElementById('skills').value.trim());
-  fd.append('resumeFile', resume);
+  fd.append('skills',          document.getElementById('skills').value.trim());
+  fd.append('resumeFile',      resume);
 
-  try{
+  try {
     const API_URL = 'https://sensussoft-ai-hiring-automation.vercel.app/api/career-apply';
 
-    const resp = await fetch(API_URL,{
-      method:'POST',
-      body: fd
-    });
+    const resp = await fetch(API_URL, { method: 'POST', body: fd });
 
     const txt = await resp.text();
     let json = {};
-    try{
-      json = JSON.parse(txt);
-    }catch(e){
-      json = { error: txt || 'Unknown server response' };
-    }
+    try { json = JSON.parse(txt); } catch (e) { json = { error: txt || 'Unknown response' }; }
 
-    if(resp.ok){
+    if (resp.ok) {
       form.reset();
-      showResult('✅ Candidate application submitted successfully. Personalized technical assignment document has been delivered to candidate email.', true);
-
-      setTimeout(()=>{
-        resultBox.style.display='none';
-      },4000);
-    }else{
-      showResult(json.error || 'Application submission failed.', false);
+      document.getElementById('fileName').textContent = 'No file chosen';
+      document.querySelectorAll('input').forEach(i => i.classList.remove('valid'));
+      showResult(
+        '✅ Application submitted successfully! Personalized technical assignment has been delivered to your email.',
+        true
+      );
+      setTimeout(() => { resultBox.style.display = 'none'; }, 6000);
+    } else {
+      showResult(json.error || json.message || 'Submission failed. Please try again.', false);
     }
 
-  }catch(err){
+  } catch (err) {
     showResult('Network error: ' + err.message, false);
+  } finally {
+    setLoading(false);
   }
-
-  submitBtn.disabled = false;
-  submitBtn.innerText = 'Submit Career Application';
 });
 </script>
 
