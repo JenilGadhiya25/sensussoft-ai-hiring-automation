@@ -9,217 +9,261 @@
 
     body {
       font-family: 'Segoe UI', Inter, system-ui, Arial, sans-serif;
-      background: #f4f6fb;
+      background: #f0f2f8;
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
     }
 
-    /* ── Outer wrapper ── */
+    /* ── Outer card ── */
     .wrapper {
       display: flex;
-      width: 960px;
+      width: 980px;
       max-width: 98vw;
-      min-height: 580px;
-      border-radius: 18px;
+      min-height: 600px;
+      border-radius: 20px;
       overflow: hidden;
-      box-shadow: 0 20px 60px rgba(30, 58, 95, 0.18);
+      box-shadow: 0 24px 64px rgba(30, 58, 95, 0.16);
     }
 
-    /* ── LEFT PANEL ── */
+    /* ════════════════════════════════
+       LEFT PANEL  — blue side
+    ════════════════════════════════ */
     .left {
-      width: 42%;
-      background: #2563EB;
-      padding: 52px 44px;
+      width: 40%;
+      background: linear-gradient(160deg, #3b82f6 0%, #2563eb 60%, #1d4ed8 100%);
+      padding: 48px 40px 48px 44px;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
       position: relative;
       overflow: hidden;
     }
 
-    /* curved white shape on right edge of left panel */
+    /* big curved white blob — Howsy style */
     .left::after {
       content: '';
       position: absolute;
-      right: -60px;
-      top: -40px;
-      width: 160px;
-      height: 160%;
-      background: #f4f6fb;
+      right: -80px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 200px;
+      height: 200px;
+      background: #f0f2f8;
       border-radius: 50%;
+      /* make it taller so it spans full height */
+      height: 130%;
+      top: -15%;
     }
 
-    .left-content { position: relative; z-index: 1; }
+    .left-inner { position: relative; z-index: 2; flex: 1; display: flex; flex-direction: column; }
 
-    /* Logo */
+    /* ── Logo ── */
     .logo {
       display: flex;
       align-items: center;
-      gap: 10px;
-      margin-bottom: 48px;
+      gap: 11px;
+      margin-bottom: 52px;
     }
-    .logo-icon {
-      width: 36px;
-      height: 36px;
-      background: rgba(255,255,255,0.2);
-      border-radius: 8px;
+    .logo-box {
+      width: 40px;
+      height: 40px;
+      background: rgba(255,255,255,0.22);
+      border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
-    }
-    .logo-icon svg { width: 20px; height: 20px; fill: #fff; }
-    .logo-name {
-      font-size: 20px;
-      font-weight: 700;
-      color: #fff;
-      letter-spacing: -0.3px;
-    }
-
-    /* Headline */
-    .left h2 {
-      font-size: 28px;
-      font-weight: 700;
-      color: #fff;
-      line-height: 1.35;
-      margin-bottom: 32px;
-    }
-
-    /* Quote block */
-    .quote {
-      margin-bottom: 28px;
-    }
-    .quote p {
-      font-size: 13px;
-      color: rgba(255,255,255,0.8);
-      font-style: italic;
-      line-height: 1.6;
-      margin-bottom: 10px;
-    }
-    .quote .source {
-      font-size: 15px;
-      font-weight: 700;
-      color: #fff;
-      font-style: normal;
-      letter-spacing: 0.5px;
-    }
-
-    /* Badge */
-    .badge {
-      font-size: 12px;
-      color: rgba(255,255,255,0.7);
-      line-height: 1.5;
-    }
-    .badge strong {
-      display: block;
-      font-size: 16px;
+      font-size: 18px;
       font-weight: 800;
       color: #fff;
-      margin-top: 2px;
+      letter-spacing: -1px;
+    }
+    .logo-text {
+      font-size: 19px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.4px;
     }
 
-    /* ── RIGHT PANEL ── */
+    /* ── Headline ── */
+    .left h2 {
+      font-size: 30px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.28;
+      margin-bottom: 20px;
+      letter-spacing: -0.5px;
+    }
+
+    /* ── Description ── */
+    .left-desc {
+      font-size: 13.5px;
+      color: rgba(255,255,255,0.82);
+      line-height: 1.65;
+      margin-bottom: 36px;
+    }
+
+    /* ── Feature pills ── */
+    .features { display: flex; flex-direction: column; gap: 10px; }
+    .feat {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255,255,255,0.13);
+      border-radius: 10px;
+      padding: 11px 16px;
+      font-size: 13px;
+      color: #fff;
+      font-weight: 500;
+    }
+    .feat-check {
+      width: 20px;
+      height: 20px;
+      background: rgba(255,255,255,0.25);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      flex-shrink: 0;
+    }
+
+    /* ════════════════════════════════
+       RIGHT PANEL  — white form side
+    ════════════════════════════════ */
     .right {
       flex: 1;
       background: #fff;
-      padding: 52px 48px;
+      padding: 52px 52px 44px 52px;
       display: flex;
       flex-direction: column;
       justify-content: center;
     }
 
-    .right h3 {
-      font-size: 22px;
-      font-weight: 700;
+    /* ── Heading ── */
+    .right-title {
+      font-size: 24px;
+      font-weight: 800;
       color: #0f172a;
-      margin-bottom: 6px;
+      text-align: center;
+      margin-bottom: 4px;
+      letter-spacing: -0.4px;
     }
-    .right .subtitle {
-      font-size: 13.5px;
+    .right-sub {
+      font-size: 13px;
       color: #64748b;
-      margin-bottom: 28px;
+      text-align: center;
+      margin-bottom: 20px;
     }
 
-    /* Form rows */
+    /* ── Info banner ── */
+    .info-banner {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 12.5px;
+      color: #1d4ed8;
+      text-align: center;
+      margin-bottom: 22px;
+      line-height: 1.5;
+    }
+
+    /* ── Field layout ── */
     .form-row {
       display: flex;
-      gap: 16px;
-      margin-bottom: 0;
+      gap: 14px;
     }
     .form-row .field { flex: 1; }
 
-    .field {
-      margin-bottom: 18px;
-    }
+    .field { margin-bottom: 16px; }
 
-    .field-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      margin-bottom: 6px;
-    }
-    .field-header label {
+    .field label {
+      display: block;
       font-size: 13px;
       font-weight: 600;
       color: #374151;
+      margin-bottom: 6px;
     }
-    .field-header .hint {
-      font-size: 11.5px;
-      color: #94a3b8;
-      font-style: italic;
-    }
+    .field label .req { color: #ef4444; margin-left: 2px; }
+
+    /* ── Inputs ── */
+    .input-wrap { position: relative; }
 
     input[type=text],
     input[type=email],
     input[type=number],
-    select,
     textarea {
       width: 100%;
-      padding: 11px 14px;
+      padding: 11px 38px 11px 14px;
       border: 1.5px solid #e2e8f0;
       border-radius: 8px;
       font-size: 14px;
       color: #0f172a;
       background: #fff;
       outline: none;
-      transition: border-color 0.2s, box-shadow 0.2s;
+      transition: border-color 0.18s, box-shadow 0.18s;
       font-family: inherit;
     }
-    input:focus, select:focus, textarea:focus {
-      border-color: #2563EB;
-      box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+    input:focus, textarea:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.10);
     }
     input.valid {
       border-color: #22c55e;
     }
-    input.valid:focus {
-      box-shadow: 0 0 0 3px rgba(34,197,94,0.1);
+    textarea {
+      resize: vertical;
+      min-height: 78px;
+      padding-right: 14px;
     }
-    textarea { resize: vertical; min-height: 80px; }
 
-    /* Checkmark inside valid input */
-    .input-wrap { position: relative; }
-    .input-wrap .check {
+    /* tick inside input */
+    .tick {
       position: absolute;
       right: 12px;
       top: 50%;
       transform: translateY(-50%);
       color: #22c55e;
-      font-size: 16px;
+      font-size: 15px;
       display: none;
       pointer-events: none;
     }
-    .input-wrap input.valid ~ .check { display: block; }
+    input.valid ~ .tick { display: block; }
 
-    /* Submit button */
+    /* ── Upload box ── */
+    .upload-box {
+      border: 1.5px dashed #93c5fd;
+      border-radius: 8px;
+      padding: 14px 16px;
+      background: #f8faff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: border-color 0.18s;
+    }
+    .upload-box:hover { border-color: #2563eb; }
+    .upload-box input[type=file] {
+      display: none;
+    }
+    .upload-label {
+      font-size: 13px;
+      color: #64748b;
+      cursor: pointer;
+      flex: 1;
+    }
+    .upload-label span { color: #2563eb; font-weight: 600; }
+    .upload-icon { font-size: 18px; color: #93c5fd; }
+
+    /* ── Submit button ── */
     .btn-submit {
       width: 100%;
-      padding: 13px;
-      background: #2563EB;
+      padding: 14px;
+      background: #2563eb;
       color: #fff;
       border: none;
-      border-radius: 8px;
+      border-radius: 9px;
       font-size: 15px;
       font-weight: 700;
       cursor: pointer;
@@ -227,47 +271,19 @@
       align-items: center;
       justify-content: center;
       gap: 10px;
-      transition: background 0.2s, transform 0.1s;
-      margin-top: 4px;
+      transition: background 0.18s, transform 0.1s;
+      margin-top: 6px;
+      letter-spacing: 0.1px;
     }
-    .btn-submit:hover { background: #1d4ed8; }
+    .btn-submit:hover  { background: #1d4ed8; }
     .btn-submit:active { transform: scale(0.99); }
-    .btn-submit .arrow { font-size: 18px; }
     .btn-submit:disabled { background: #93c5fd; cursor: not-allowed; }
+    .btn-arrow { font-size: 18px; }
 
-    /* Privacy note */
-    .privacy {
-      font-size: 11.5px;
-      color: #94a3b8;
-      margin-top: 12px;
-      line-height: 1.6;
-    }
-
-    /* Result message */
-    .result {
-      margin-top: 14px;
-      padding: 12px 16px;
-      border-radius: 8px;
-      font-size: 13.5px;
-      font-weight: 500;
-      display: none;
-    }
-    .result.success {
-      background: #f0fdf4;
-      color: #166534;
-      border: 1px solid #bbf7d0;
-    }
-    .result.error {
-      background: #fff1f2;
-      color: #be123c;
-      border: 1px solid #fecdd3;
-    }
-
-    /* Loading spinner */
+    /* spinner */
     .spinner {
-      width: 18px;
-      height: 18px;
-      border: 2.5px solid rgba(255,255,255,0.4);
+      width: 17px; height: 17px;
+      border: 2.5px solid rgba(255,255,255,0.35);
       border-top-color: #fff;
       border-radius: 50%;
       animation: spin 0.7s linear infinite;
@@ -275,10 +291,32 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* Responsive */
-    @media (max-width: 700px) {
-      .wrapper { flex-direction: column; border-radius: 12px; }
-      .left { width: 100%; padding: 36px 28px; min-height: auto; }
+    /* ── Footer note ── */
+    .footer-note {
+      font-size: 11.5px;
+      color: #94a3b8;
+      text-align: center;
+      margin-top: 14px;
+      line-height: 1.55;
+    }
+
+    /* ── Result message ── */
+    .result {
+      margin-top: 12px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 13.5px;
+      font-weight: 500;
+      display: none;
+      line-height: 1.5;
+    }
+    .result.success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+    .result.error   { background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; }
+
+    /* ── Responsive ── */
+    @media (max-width: 720px) {
+      .wrapper { flex-direction: column; border-radius: 14px; }
+      .left { width: 100%; padding: 36px 28px; }
       .left::after { display: none; }
       .right { padding: 32px 24px; }
       .form-row { flex-direction: column; gap: 0; }
@@ -289,118 +327,152 @@
 
 <div class="wrapper">
 
-  <!-- ── LEFT PANEL ── -->
+  <!-- ══════════════ LEFT PANEL ══════════════ -->
   <div class="left">
-    <div class="left-content">
+    <div class="left-inner">
 
       <!-- Logo -->
       <div class="logo">
-        <div class="logo-icon">
-          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/>
-          </svg>
-        </div>
-        <span class="logo-name">SensusSoft</span>
+        <div class="logo-box">S</div>
+        <span class="logo-text">SensusSoft</span>
       </div>
 
       <!-- Headline -->
-      <h2>Your AI-powered<br/>hiring journey<br/>starts here.</h2>
+      <h2>Enterprise AI<br/>Hiring Automation</h2>
 
-      <!-- Quote -->
-      <div class="quote">
-        <p>"Automating technical hiring with AI — so companies can focus on what matters most: great people."</p>
-        <span class="source">SensusSoft Technologies</span>
-      </div>
+      <!-- Description -->
+      <p class="left-desc">
+        SensusSoft intelligently screens technical candidates,
+        generates personalized assignments, allocates GitHub
+        repositories, and automates HR workflows.
+      </p>
 
-      <!-- Badge -->
-      <div class="badge">
-        Powered by
-        <strong>AI Hiring Automation</strong>
+      <!-- Feature list -->
+      <div class="features">
+        <div class="feat">
+          <div class="feat-check">✓</div>
+          AI Based Technical Candidate Evaluation
+        </div>
+        <div class="feat">
+          <div class="feat-check">✓</div>
+          Personalized Assignment PDF Generation
+        </div>
+        <div class="feat">
+          <div class="feat-check">✓</div>
+          Auto GitHub Repository Allocation
+        </div>
+        <div class="feat">
+          <div class="feat-check">✓</div>
+          Automated HR Email Delivery Workflow
+        </div>
       </div>
 
     </div>
   </div>
 
-  <!-- ── RIGHT PANEL ── -->
+  <!-- ══════════════ RIGHT PANEL ══════════════ -->
   <div class="right">
-    <h3>Apply for a Position</h3>
-    <p class="subtitle">Fill in your details and our AI will generate a personalized assignment for you.</p>
+
+    <h1 class="right-title">Career Application Portal</h1>
+    <p class="right-sub">Submit Candidate Details For AI Technical Screening</p>
+
+    <!-- Info banner -->
+    <div class="info-banner">
+      Only IT / Software / Technical profiles are accepted in this recruitment automation portal.
+    </div>
 
     <form id="candidateForm" autocomplete="off">
 
-      <!-- Full Name + Email row -->
+      <!-- Row 1: Full Name + Email -->
       <div class="form-row">
         <div class="field">
-          <div class="field-header">
-            <label for="fullName">Full Name</label>
-          </div>
+          <label for="fullName">Full Name <span class="req">*</span></label>
           <div class="input-wrap">
-            <input id="fullName" name="fullName" type="text" placeholder="e.g. Rahul Shah" required />
-            <span class="check">✓</span>
+            <input id="fullName" name="fullName" type="text" placeholder="" required />
+            <span class="tick">✓</span>
           </div>
         </div>
         <div class="field">
-          <div class="field-header">
-            <label for="email">Email Address</label>
-            <span class="hint">For assignment delivery</span>
-          </div>
+          <label for="email">Email Address <span class="req">*</span></label>
           <div class="input-wrap">
-            <input id="email" name="email" type="email" placeholder="you@example.com" required />
-            <span class="check">✓</span>
+            <input id="email" name="email" type="email" placeholder="" required />
+            <span class="tick">✓</span>
           </div>
         </div>
       </div>
 
-      <!-- Applied Role -->
-      <div class="field">
-        <div class="field-header">
-          <label for="appliedRole">Applied Role</label>
-          <span class="hint">Be specific</span>
+      <!-- Row 2: Applied Role + Years of Experience -->
+      <div class="form-row">
+        <div class="field">
+          <label for="appliedRole">Applied Role <span class="req">*</span></label>
+          <div class="input-wrap">
+            <input id="appliedRole" name="appliedRole" type="text"
+              placeholder="React Developer / UI UX Designer" required />
+            <span class="tick">✓</span>
+          </div>
         </div>
-        <div class="input-wrap">
-          <input id="appliedRole" name="appliedRole" type="text" placeholder="e.g. React Developer, UI/UX Designer, DevOps Engineer" required />
-          <span class="check">✓</span>
+        <div class="field">
+          <label for="yearsExp">Years of Experience <span class="req">*</span></label>
+          <div class="input-wrap">
+            <input id="yearsExp" name="yearsExp" type="number" min="0" step="0.5" placeholder="" required />
+            <span class="tick">✓</span>
+          </div>
         </div>
       </div>
 
-      <!-- Skills / Resume -->
+      <!-- Known Skills -->
       <div class="field">
-        <div class="field-header">
-          <label for="skills">Skills &amp; Resume Summary</label>
-          <span class="hint">Paste your resume or list skills</span>
+        <label for="skills">Known Skills (comma separated) <span class="req">*</span></label>
+        <div class="input-wrap">
+          <input id="skills" name="skills" type="text"
+            placeholder="React, Node.js, MongoDB, Figma" required />
+          <span class="tick">✓</span>
         </div>
-        <textarea id="skills" name="skills" placeholder="e.g. React, Node.js, MongoDB, 3 years experience, built e-commerce platform..." required></textarea>
+      </div>
+
+      <!-- Upload Resume PDF -->
+      <div class="field">
+        <label>Upload Resume PDF <span class="req">*</span></label>
+        <label class="upload-box" for="resumeFile">
+          <span class="upload-icon">📄</span>
+          <input id="resumeFile" name="resumeFile" type="file" accept=".pdf,.doc,.docx" />
+          <span class="upload-label"><span>Choose file</span> &nbsp;No file chosen</span>
+        </label>
       </div>
 
       <!-- Submit -->
       <button type="submit" class="btn-submit" id="submitBtn">
-        <span id="btnText">Submit Application</span>
+        <span id="btnText">Submit Career Application</span>
         <div class="spinner" id="spinner"></div>
-        <span class="arrow" id="btnArrow">→</span>
+        <span class="btn-arrow" id="btnArrow">→</span>
       </button>
-
-      <p class="privacy">
-        We take your data privacy seriously and will not share your details with anyone else.
-        By submitting you accept our Terms &amp; Conditions and Privacy Policy.
-      </p>
 
     </form>
 
+    <!-- Result -->
     <div id="result" class="result"></div>
-  </div>
 
+    <!-- Footer -->
+    <p class="footer-note">Powered by SensusSoft Enterprise AI Hiring Automation</p>
+
+  </div>
 </div>
 
 <script>
-  // ── Live validation checkmarks ──────────────────────────────────────────────
-  ['fullName', 'email', 'appliedRole'].forEach(id => {
+  // ── File input label update ─────────────────────────────────────────────────
+  document.getElementById('resumeFile').addEventListener('change', function () {
+    const label = this.closest('.upload-box').querySelector('.upload-label');
+    label.innerHTML = this.files.length
+      ? '<span>' + this.files[0].name + '</span>'
+      : '<span>Choose file</span> &nbsp;No file chosen';
+  });
+
+  // ── Live checkmarks ─────────────────────────────────────────────────────────
+  ['fullName', 'email', 'appliedRole', 'yearsExp', 'skills'].forEach(id => {
     const el = document.getElementById(id);
+    if (!el) return;
     el.addEventListener('input', () => {
-      if (el.value.trim().length > 1) {
-        el.classList.add('valid');
-      } else {
-        el.classList.remove('valid');
-      }
+      el.classList.toggle('valid', el.value.trim().length > 0);
     });
   });
 
@@ -413,10 +485,10 @@
   const btnArrow  = document.getElementById('btnArrow');
 
   function setLoading(on) {
-    submitBtn.disabled = on;
+    submitBtn.disabled     = on;
     spinner.style.display  = on ? 'block' : 'none';
     btnArrow.style.display = on ? 'none'  : 'inline';
-    btnText.textContent    = on ? 'Submitting...' : 'Submit Application';
+    btnText.textContent    = on ? 'Submitting...' : 'Submit Career Application';
   }
 
   function showResult(msg, ok) {
@@ -460,6 +532,8 @@
         );
         form.reset();
         document.querySelectorAll('input').forEach(i => i.classList.remove('valid'));
+        document.querySelector('.upload-label').innerHTML =
+          '<span>Choose file</span> &nbsp;No file chosen';
       } else if (json.role_mismatch) {
         showResult('⚠️ ' + (json.message || 'Role mismatch detected. Please apply for a matching role.'), false);
       } else {
