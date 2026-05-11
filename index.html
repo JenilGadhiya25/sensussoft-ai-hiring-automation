@@ -3,96 +3,475 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Local AI Hiring — Candidate Form</title>
+  <title>SensusSoft — AI Hiring Automation</title>
   <style>
-    body{font-family:Inter,system-ui,Segoe UI,Arial;background:#f6f8fa;color:#0b1220;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}
-    .card{background:#fff;padding:28px;border-radius:10px;box-shadow:0 6px 18px rgba(11,18,32,0.08);width:520px;max-width:95%}
-    h1{margin:0 0 16px;font-size:20px}
-    label{display:block;font-size:13px;margin-top:12px}
-    input[type=text],input[type=email],input[type=number],select,textarea{width:100%;padding:10px;border:1px solid #e3e8ee;border-radius:6px;margin-top:6px;font-size:14px}
-    .row{display:flex;gap:12px}
-    .row > *{flex:1}
-    button{margin-top:18px;padding:10px 14px;background:#0b6efd;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer}
-    .note{font-size:12px;color:#6b7280;margin-top:8px}
-    .result{margin-top:12px;padding:10px;border-radius:6px;background:#f1f5f9;color:#0b1220}
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Inter, system-ui, Arial, sans-serif;
+      background: #f4f6fb;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ── Outer wrapper ── */
+    .wrapper {
+      display: flex;
+      width: 960px;
+      max-width: 98vw;
+      min-height: 580px;
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(30, 58, 95, 0.18);
+    }
+
+    /* ── LEFT PANEL ── */
+    .left {
+      width: 42%;
+      background: #2563EB;
+      padding: 52px 44px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* curved white shape on right edge of left panel */
+    .left::after {
+      content: '';
+      position: absolute;
+      right: -60px;
+      top: -40px;
+      width: 160px;
+      height: 160%;
+      background: #f4f6fb;
+      border-radius: 50%;
+    }
+
+    .left-content { position: relative; z-index: 1; }
+
+    /* Logo */
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 48px;
+    }
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .logo-icon svg { width: 20px; height: 20px; fill: #fff; }
+    .logo-name {
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.3px;
+    }
+
+    /* Headline */
+    .left h2 {
+      font-size: 28px;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.35;
+      margin-bottom: 32px;
+    }
+
+    /* Quote block */
+    .quote {
+      margin-bottom: 28px;
+    }
+    .quote p {
+      font-size: 13px;
+      color: rgba(255,255,255,0.8);
+      font-style: italic;
+      line-height: 1.6;
+      margin-bottom: 10px;
+    }
+    .quote .source {
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      font-style: normal;
+      letter-spacing: 0.5px;
+    }
+
+    /* Badge */
+    .badge {
+      font-size: 12px;
+      color: rgba(255,255,255,0.7);
+      line-height: 1.5;
+    }
+    .badge strong {
+      display: block;
+      font-size: 16px;
+      font-weight: 800;
+      color: #fff;
+      margin-top: 2px;
+    }
+
+    /* ── RIGHT PANEL ── */
+    .right {
+      flex: 1;
+      background: #fff;
+      padding: 52px 48px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .right h3 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 6px;
+    }
+    .right .subtitle {
+      font-size: 13.5px;
+      color: #64748b;
+      margin-bottom: 28px;
+    }
+
+    /* Form rows */
+    .form-row {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 0;
+    }
+    .form-row .field { flex: 1; }
+
+    .field {
+      margin-bottom: 18px;
+    }
+
+    .field-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 6px;
+    }
+    .field-header label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #374151;
+    }
+    .field-header .hint {
+      font-size: 11.5px;
+      color: #94a3b8;
+      font-style: italic;
+    }
+
+    input[type=text],
+    input[type=email],
+    input[type=number],
+    select,
+    textarea {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #0f172a;
+      background: #fff;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      font-family: inherit;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: #2563EB;
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+    }
+    input.valid {
+      border-color: #22c55e;
+    }
+    input.valid:focus {
+      box-shadow: 0 0 0 3px rgba(34,197,94,0.1);
+    }
+    textarea { resize: vertical; min-height: 80px; }
+
+    /* Checkmark inside valid input */
+    .input-wrap { position: relative; }
+    .input-wrap .check {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #22c55e;
+      font-size: 16px;
+      display: none;
+      pointer-events: none;
+    }
+    .input-wrap input.valid ~ .check { display: block; }
+
+    /* Submit button */
+    .btn-submit {
+      width: 100%;
+      padding: 13px;
+      background: #2563EB;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: background 0.2s, transform 0.1s;
+      margin-top: 4px;
+    }
+    .btn-submit:hover { background: #1d4ed8; }
+    .btn-submit:active { transform: scale(0.99); }
+    .btn-submit .arrow { font-size: 18px; }
+    .btn-submit:disabled { background: #93c5fd; cursor: not-allowed; }
+
+    /* Privacy note */
+    .privacy {
+      font-size: 11.5px;
+      color: #94a3b8;
+      margin-top: 12px;
+      line-height: 1.6;
+    }
+
+    /* Result message */
+    .result {
+      margin-top: 14px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 13.5px;
+      font-weight: 500;
+      display: none;
+    }
+    .result.success {
+      background: #f0fdf4;
+      color: #166534;
+      border: 1px solid #bbf7d0;
+    }
+    .result.error {
+      background: #fff1f2;
+      color: #be123c;
+      border: 1px solid #fecdd3;
+    }
+
+    /* Loading spinner */
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2.5px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Responsive */
+    @media (max-width: 700px) {
+      .wrapper { flex-direction: column; border-radius: 12px; }
+      .left { width: 100%; padding: 36px 28px; min-height: auto; }
+      .left::after { display: none; }
+      .right { padding: 32px 24px; }
+      .form-row { flex-direction: column; gap: 0; }
+    }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>Candidate Application</h1>
-    <form id="candidateForm">
-      <label for="fullName">Full name *</label>
-      <input id="fullName" name="fullName" type="text" required />
 
-      <label for="email">Email *</label>
-      <input id="email" name="email" type="email" required />
+<div class="wrapper">
 
-      <label for="appliedRole">Applied role *</label>
-      <input id="appliedRole" name="appliedRole" type="text" required />
+  <!-- ── LEFT PANEL ── -->
+  <div class="left">
+    <div class="left-content">
 
-      <div class="row">
-        <div>
-          <label for="yearsExperience">Years of experience *</label>
-          <input id="yearsExperience" name="yearsExperience" type="number" min="0" step="0.1" required />
+      <!-- Logo -->
+      <div class="logo">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/>
+          </svg>
         </div>
-        <div>
-          <label for="skills">Skills * (comma separated)</label>
-          <input id="skills" name="skills" type="text" placeholder="e.g. Node.js, React, SQL" required />
+        <span class="logo-name">SensusSoft</span>
+      </div>
+
+      <!-- Headline -->
+      <h2>Your AI-powered<br/>hiring journey<br/>starts here.</h2>
+
+      <!-- Quote -->
+      <div class="quote">
+        <p>"Automating technical hiring with AI — so companies can focus on what matters most: great people."</p>
+        <span class="source">SensusSoft Technologies</span>
+      </div>
+
+      <!-- Badge -->
+      <div class="badge">
+        Powered by
+        <strong>AI Hiring Automation</strong>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── RIGHT PANEL ── -->
+  <div class="right">
+    <h3>Apply for a Position</h3>
+    <p class="subtitle">Fill in your details and our AI will generate a personalized assignment for you.</p>
+
+    <form id="candidateForm" autocomplete="off">
+
+      <!-- Full Name + Email row -->
+      <div class="form-row">
+        <div class="field">
+          <div class="field-header">
+            <label for="fullName">Full Name</label>
+          </div>
+          <div class="input-wrap">
+            <input id="fullName" name="fullName" type="text" placeholder="e.g. Rahul Shah" required />
+            <span class="check">✓</span>
+          </div>
+        </div>
+        <div class="field">
+          <div class="field-header">
+            <label for="email">Email Address</label>
+            <span class="hint">For assignment delivery</span>
+          </div>
+          <div class="input-wrap">
+            <input id="email" name="email" type="email" placeholder="you@example.com" required />
+            <span class="check">✓</span>
+          </div>
         </div>
       </div>
 
-      <label for="resumeUrl">Resume URL (optional)</label>
-      <input id="resumeUrl" name="resumeUrl" type="text" placeholder="https://..." />
+      <!-- Applied Role -->
+      <div class="field">
+        <div class="field-header">
+          <label for="appliedRole">Applied Role</label>
+          <span class="hint">Be specific</span>
+        </div>
+        <div class="input-wrap">
+          <input id="appliedRole" name="appliedRole" type="text" placeholder="e.g. React Developer, UI/UX Designer, DevOps Engineer" required />
+          <span class="check">✓</span>
+        </div>
+      </div>
 
-      <button type="submit">Submit Application</button>
-      <div class="note">This form POSTs JSON to <strong>https://sensussoft-ai-hiring-automation.vercel.app/api/career-apply</strong></div>
+      <!-- Skills / Resume -->
+      <div class="field">
+        <div class="field-header">
+          <label for="skills">Skills &amp; Resume Summary</label>
+          <span class="hint">Paste your resume or list skills</span>
+        </div>
+        <textarea id="skills" name="skills" placeholder="e.g. React, Node.js, MongoDB, 3 years experience, built e-commerce platform..." required></textarea>
+      </div>
+
+      <!-- Submit -->
+      <button type="submit" class="btn-submit" id="submitBtn">
+        <span id="btnText">Submit Application</span>
+        <div class="spinner" id="spinner"></div>
+        <span class="arrow" id="btnArrow">→</span>
+      </button>
+
+      <p class="privacy">
+        We take your data privacy seriously and will not share your details with anyone else.
+        By submitting you accept our Terms &amp; Conditions and Privacy Policy.
+      </p>
+
     </form>
-    <div id="result" class="result" style="display:none"></div>
+
+    <div id="result" class="result"></div>
   </div>
 
-  <script>
-    const form = document.getElementById('candidateForm');
-    const resultEl = document.getElementById('result');
+</div>
 
-    function showResult(msg, ok=true){
-      resultEl.style.display = 'block';
-      resultEl.style.background = ok ? '#ecfdf5' : '#fff1f2';
-      resultEl.textContent = msg;
-    }
-
-    form.addEventListener('submit', async (e)=>{
-      e.preventDefault();
-      const data = {
-        fullName: document.getElementById('fullName').value.trim(),
-        email: document.getElementById('email').value.trim(),
-        appliedRole: document.getElementById('appliedRole').value.trim(),
-        yearsExperience: Number(document.getElementById('yearsExperience').value),
-        skills: document.getElementById('skills').value.split(',').map(s=>s.trim()).filter(Boolean),
-        resumeUrl: document.getElementById('resumeUrl').value.trim() || undefined
-      };
-
-      if(!data.fullName || !data.email || !data.appliedRole || isNaN(data.yearsExperience) || data.skills.length===0){
-        showResult('Please fill in all required fields.', false);
-        return;
-      }
-
-      try{
-        const resp = await fetch('https://sensussoft-ai-hiring-automation.vercel.app/api/career-apply', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
-        });
-        const json = await resp.json();
-        if(resp.ok){
-          showResult('Application submitted — received id: ' + (json.profile && json.profile.id ? json.profile.id : 'unknown'));
-          form.reset();
-        } else {
-          showResult('Server error: ' + (json.error || JSON.stringify(json)), false);
-        }
-      } catch(err){
-        showResult('Network error: ' + err.message, false);
+<script>
+  // ── Live validation checkmarks ──────────────────────────────────────────────
+  ['fullName', 'email', 'appliedRole'].forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener('input', () => {
+      if (el.value.trim().length > 1) {
+        el.classList.add('valid');
+      } else {
+        el.classList.remove('valid');
       }
     });
-  </script>
+  });
+
+  // ── Form submit ─────────────────────────────────────────────────────────────
+  const form      = document.getElementById('candidateForm');
+  const resultEl  = document.getElementById('result');
+  const submitBtn = document.getElementById('submitBtn');
+  const spinner   = document.getElementById('spinner');
+  const btnText   = document.getElementById('btnText');
+  const btnArrow  = document.getElementById('btnArrow');
+
+  function setLoading(on) {
+    submitBtn.disabled = on;
+    spinner.style.display  = on ? 'block' : 'none';
+    btnArrow.style.display = on ? 'none'  : 'inline';
+    btnText.textContent    = on ? 'Submitting...' : 'Submit Application';
+  }
+
+  function showResult(msg, ok) {
+    resultEl.style.display = 'block';
+    resultEl.className     = 'result ' + (ok ? 'success' : 'error');
+    resultEl.textContent   = msg;
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const fullName    = document.getElementById('fullName').value.trim();
+    const email       = document.getElementById('email').value.trim();
+    const appliedRole = document.getElementById('appliedRole').value.trim();
+    const skills      = document.getElementById('skills').value.trim();
+
+    if (!fullName || !email || !appliedRole || !skills) {
+      showResult('Please fill in all required fields.', false);
+      return;
+    }
+
+    setLoading(true);
+    resultEl.style.display = 'none';
+
+    try {
+      const resp = await fetch(
+        'https://sensussoft-ai-hiring-automation.vercel.app/api/career-apply',
+        {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fullName, email, appliedRole, skills })
+        }
+      );
+
+      const json = await resp.json();
+
+      if (resp.ok && json.success) {
+        showResult(
+          '✅ Application submitted successfully! Check your email — your personalized assignment is on its way.',
+          true
+        );
+        form.reset();
+        document.querySelectorAll('input').forEach(i => i.classList.remove('valid'));
+      } else if (json.role_mismatch) {
+        showResult('⚠️ ' + (json.message || 'Role mismatch detected. Please apply for a matching role.'), false);
+      } else {
+        showResult('❌ ' + (json.error || 'Something went wrong. Please try again.'), false);
+      }
+    } catch (err) {
+      showResult('❌ Network error: ' + err.message, false);
+    } finally {
+      setLoading(false);
+    }
+  });
+</script>
+
 </body>
 </html>
