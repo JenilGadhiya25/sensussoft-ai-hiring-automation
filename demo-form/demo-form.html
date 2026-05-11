@@ -27,26 +27,34 @@ body {
 /* ── Card wrapper ───────────────────────────────────────────── */
 .wrapper {
   display: flex;
-  width: 1020px;
+  width: 1100px;
   max-width: 100%;
-  min-height: 620px;
-  border-radius: 22px;
-  overflow: hidden;
+  min-height: 640px;
+  border-radius: 24px;
+  /* visible so blob doesn't clip left panel content */
+  overflow: visible;
   box-shadow: 0 28px 80px rgba(30, 58, 95, 0.18);
+  /* clip only the rounded corners, not the content */
+  isolation: isolate;
 }
 
 /* ══════════════════════════════════════════════════════════════
    LEFT PANEL
 ══════════════════════════════════════════════════════════════ */
 .left {
-  width: 42%;
+  /* wider so text never gets cut by the blob */
+  width: 44%;
   background: linear-gradient(155deg, #3b82f6 0%, #2563eb 55%, #1d4ed8 100%);
-  padding: 56px 44px 56px 48px;
+  /* extra right padding so text stays clear of the blob */
+  padding: 56px 70px 56px 52px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   position: relative;
-  overflow: hidden;
+  /* clip only the left+top+bottom rounded corners */
+  border-radius: 24px 0 0 24px;
+  /* allow blob to overflow right edge without clipping text */
+  overflow: visible;
   flex-shrink: 0;
 }
 
@@ -54,18 +62,23 @@ body {
 .left::after {
   content: '';
   position: absolute;
-  right: -90px;
+  /* pull it further right so it overlaps the seam */
+  right: -100px;
   top: 50%;
   transform: translateY(-50%);
-  width: 220px;
-  height: 110%;
+  width: 240px;
+  /* taller than panel so it covers full height */
+  height: 120%;
   background: #f0f4ff;
   border-radius: 50%;
   pointer-events: none;
+  /* sit above left bg but below left text */
+  z-index: 1;
 }
 
 .left-inner {
   position: relative;
+  /* above the blob */
   z-index: 2;
   display: flex;
   flex-direction: column;
@@ -149,11 +162,15 @@ body {
 .right {
   flex: 1;
   background: #fff;
-  padding: 52px 52px 44px 56px;
+  /* left padding accounts for the blob overlap */
+  padding: 52px 52px 44px 60px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   overflow-y: auto;
+  border-radius: 0 24px 24px 0;
+  /* clip right panel cleanly */
+  overflow: hidden;
 }
 
 /* ── Heading ── */
@@ -301,11 +318,25 @@ input.valid ~ .tick { display: block; }
 }
 
 /* ── Responsive ── */
-@media (max-width: 860px) {
-  .wrapper { flex-direction: column; border-radius: 16px; }
-  .left { width: 100%; padding: 40px 32px; min-height: auto; }
+@media (max-width: 900px) {
+  .wrapper {
+    flex-direction: column;
+    border-radius: 18px;
+    overflow: hidden;
+  }
+  .left {
+    width: 100%;
+    padding: 40px 36px;
+    min-height: auto;
+    border-radius: 18px 18px 0 0;
+    overflow: hidden;
+  }
   .left::after { display: none; }
-  .right { padding: 36px 28px 40px; }
+  .right {
+    padding: 36px 32px 44px;
+    border-radius: 0 0 18px 18px;
+    overflow: visible;
+  }
   .form-row { flex-direction: column; gap: 0; }
 }
 @media (max-width: 480px) {
